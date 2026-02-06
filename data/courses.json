@@ -1,0 +1,127 @@
+{
+  "id": "course_001",
+  "title": "Complete Data Structures & Algorithms",
+  "slug": "complete-dsa",
+  "description": "Master Data Structures and Algorithms from beginner to advanced level with real-world problems.",
+  "thumbnail": "https://example.com/course-thumbnail.jpg",
+  "price": 4999,
+  "discountPrice": 1999,
+  "isFree": false,
+  "level": "Beginner to Advanced",
+  "language": "English",
+  "duration": "45 hours",
+  "totalLectures": 120,
+  "category": "Programming",
+  "tags": ["DSA", "Coding Interview", "LeetCode"],
+  "createdAt": "2026-02-04T10:00:00Z",
+  "updatedAt": "2026-02-04T10:00:00Z",
+
+  "instructor": {
+    "id": "inst_101",
+    "name": "Aditya Gangil",
+    "bio": "Software Engineer & DSA Mentor",
+    "avatar": "https://example.com/instructor.jpg"
+  },
+
+  "learningOutcomes": [
+    "Understand core data structures",
+    "Solve coding interview questions",
+    "Improve problem solving skills"
+  ],
+
+  "requirements": [
+    "Basic programming knowledge",
+    "Laptop or PC"
+  ],
+
+  "chapters": [
+    {
+      "id": "chapter_1",
+      "title": "Introduction to DSA",
+      "order": 1,
+      "sections": [
+        {
+          "id": "section_1",
+          "title": "What is DSA?",
+          "order": 1,
+          "topics": [
+            {
+              "id": "topic_1",
+              "title": "Course Overview",
+              "type": "video",
+              "videoUrl": "https://example.com/video1",
+              "duration": "10:25",
+              "isPreview": true,
+              "resources": [
+                {
+                  "type": "pdf",
+                  "title": "Lecture Notes",
+                  "url": "https://example.com/notes.pdf"
+                }
+              ]
+            },
+            {
+              "id": "topic_2",
+              "title": "Why Learn DSA?",
+              "type": "video",
+              "videoUrl": "https://example.com/video2",
+              "duration": "15:00",
+              "isPreview": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chapter_2",
+      "title": "Arrays",
+      "order": 2,
+      "sections": [
+        {
+          "id": "section_2",
+          "title": "Array Basics",
+          "order": 1,
+          "topics": [
+            {
+              "id": "topic_3",
+              "title": "Introduction to Arrays",
+              "type": "video",
+              "videoUrl": "https://example.com/video3",
+              "duration": "20:12"
+            },
+            {
+              "id": "topic_4",
+              "title": "Array Quiz",
+              "type": "quiz",
+              "questions": [
+                {
+                  "question": "What is the time complexity of accessing an array element?",
+                  "options": ["O(1)", "O(n)", "O(log n)", "O(n log n)"],
+                  "correctAnswer": "O(1)"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+
+  "ratings": {
+    "average": 4.7,
+    "totalReviews": 1320
+  },
+
+  "enrollmentCount": 5400,
+
+  "certificate": {
+    "available": true,
+    "templateUrl": "https://example.com/certificate-template"
+  },
+
+  "seo": {
+    "metaTitle": "Best DSA Course Online",
+    "metaDescription": "Join the best Data Structures & Algorithms course and crack coding interviews.",
+    "keywords": ["DSA course", "coding interview", "algorithms"]
+  }
+}
