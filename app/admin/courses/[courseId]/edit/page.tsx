@@ -51,7 +51,7 @@ const formSchema = z.object({
   isPublished: z.boolean().default(false),
 })
 
-type FormValues = z.infer<typeof formSchema>
+type FormValues = z.input<typeof formSchema>
 
 export default function EditCoursePage() {
   const params = useParams()
@@ -65,7 +65,7 @@ export default function EditCoursePage() {
   const [categories, setCategories] = useState<Category[]>([])
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema) as any,
+    resolver: zodResolver(formSchema),
     defaultValues: {
       title: "",
       description: "",

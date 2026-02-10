@@ -136,7 +136,7 @@ function DragHandle({ id }: { id: number }) {
   )
 }
 
-const columns: ColumnDef<z.infer<typeof schema>>[] = [
+const columns: ColumnDef<z.input<typeof schema>>[] = [
   {
     id: "drag",
     header: () => null,
@@ -311,7 +311,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   },
 ]
 
-function DraggableRow({ row }: { row: Row<z.infer<typeof schema>> }) {
+function DraggableRow({ row }: { row: Row<z.input<typeof schema>> }) {
   const { transform, transition, setNodeRef, isDragging } = useSortable({
     id: row.original.id,
   })
@@ -339,7 +339,7 @@ function DraggableRow({ row }: { row: Row<z.infer<typeof schema>> }) {
 export function DataTable({
   data: initialData,
 }: {
-  data: z.infer<typeof schema>[]
+  data: z.input<typeof schema>[]
 }) {
   const [data, setData] = React.useState(() => initialData)
   const [rowSelection, setRowSelection] = React.useState({})
@@ -647,7 +647,7 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
+function TableCellViewer({ item }: { item: z.input<typeof schema> }) {
   const isMobile = useIsMobile()
 
   return (

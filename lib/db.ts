@@ -19,6 +19,7 @@ export default async function connectDb() {
     cached.promise = mongoose
       .connect(MONGODB_URI, {
         dbName: "lms",
+        bufferCommands:false
       })
       .then((mongoose) => mongoose)
   }
@@ -26,3 +27,10 @@ export default async function connectDb() {
   cached.conn = await cached.promise
   return cached.conn
 }
+
+/*With bufferCommands: false:
+
+👉 Fail FAST.
+👉 No hanging queries.
+
+Senior engineers ALWAYS disable buffering.*/

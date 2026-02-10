@@ -10,7 +10,7 @@ export async function POST(req: Request) {
         await connectDb()
 
         // 1) cookie se refresh token read
-    
+
         // old version 
         //   const cookieHeader = req.headers.get("cookie") || ""
         // const refreshToken = cookieHeader
@@ -72,5 +72,38 @@ export async function POST(req: Request) {
             { success: false, message: error.message || "Internal Server Error" },
             { status: 500 }
         )
+    }
+}
+
+export async function GET(req: Request) {
+    try {
+        await connectDb()
+        const cookieStore = await cookies()
+        // cookie read
+        const token = cookieStore.get("refreshToken")?.value
+        // console.log("token",token);
+        if (!token) {
+            return NextResponse.json({ user: null }, { status: 200 })
+        }
+
+        const decoded: any = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET!)
+        //   console.log("decoded",decoded);
+        const user = await User.findById(decoded.userId).select("name role")
+
+        if (!user) {
+            return NextResponse.json({ user: null }, { status: 200 })
+        }
+
+        return NextResponse.json(
+            {
+                user: {
+                    firstName: user.name,
+                    role:user.role
+                },
+            },
+            { status: 200 }
+        )
+    } catch (error) {
+        return NextResponse.json({ user: null }, { status: 200 })
     }
 }

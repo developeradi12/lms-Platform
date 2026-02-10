@@ -19,17 +19,20 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import z from "zod"
 import axios from "axios"
 import { toast } from "sonner"
-
+import { Controller } from "react-hook-form";
+import ThumbnailUpload from "@/components/Upload"
 
 const formSchema = z.object({
   name: z.string().min(2, "Name is required"),
   description: z.string().optional(),
-  image: z.string().min(1, "Image is required"),
+  image: z.any().refine((file) => file instanceof File || file === undefined, {
+    message: "Thumbnail is required",
+  }),
   metaTitle: z.string().min(2, "Meta title is required"),
   metaDescription: z.string().optional(),
 })
 
-type FormValues = z.infer<typeof formSchema>
+type FormValues = z.input<typeof formSchema>
 
 export default function CreateCategoryPage() {
 
@@ -52,8 +55,21 @@ export default function CreateCategoryPage() {
     console.log("FORM VALUES:", values)
     try {
       setLoading(true)
+      console.log("values", values);
+      const formData = new FormData();
+      Object.entries(values).forEach(([key, value]) => {
+        if (key === "image" && value) {
+          formData.append("image", value);
+        } else {
+          formData.append(key, String(value));
+        }
+      });
+      await axios.post(`/api/admin/categories`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
-      await axios.post(`/api/admin/categories`, values)
       toast.success("Category uploaded successfully")
       router.push("/admin/categories")
     } catch (error: any) {
@@ -119,30 +135,21 @@ export default function CreateCategoryPage() {
             </div>
 
             {/* Image */}
+            {/* Thumbnail */}
             <div className="space-y-2">
-              <Label>Image URL *</Label>
-              <Input
-                className="rounded-xl"
-                placeholder="https://..."
-                disabled={loading}
-                {...form.register("image")}
-              />
-              {form.formState.errors.image && (
-                <p className="text-sm text-red-500">
-                  {form.formState.errors.image.message}
-                </p>
-              )}
-
-              {/* Preview */}
-              {form.watch("image")?.trim() ? (
-                <div className="mt-3 overflow-hidden rounded-2xl border">
-                  <img
-                    src={form.watch("image")}
-                    alt="preview"
-                    className="w-full h-48 object-cover"
+              <Label>Thumbnail</Label>
+              <Controller
+                control={form.control}
+                name="image"
+                render={({ field }) => (
+                  <ThumbnailUpload
+                    value={field.value}
+                    onChange={(file) => field.onChange(file)}
                   />
-                </div>
-              ) : null}
+                )}
+              />
+
+
             </div>
 
             {/* Meta Title */}

@@ -20,7 +20,7 @@ const signupSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
 })
 
-type SignupValues = z.infer<typeof signupSchema>
+type SignupValues = z.input<typeof signupSchema>
 
 export default function SignupPage() {
   const router = useRouter()

@@ -23,6 +23,8 @@ import {
 } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import { Skeleton } from "@/components/ui/skeleton"
+import ThumbnailUpload from "@/components/Upload"
+import { Controller } from "react-hook-form";
 
 type Category = {
   _id: string
@@ -33,14 +35,20 @@ type Category = {
 const formSchema = z.object({
   title: z.string().min(2, "Course title is required"),
   description: z.string().optional(),
-  thumbnail: z.string().optional(),
+  thumbnail: z
+    .any()
+    .refine((file) => file instanceof File || file === undefined, {
+      message: "Thumbnail is required",
+    })
+    .optional(),
+
   category: z.string().min(1, "Category is required"),
   price: z.coerce.number().min(0),
   duration: z.coerce.number().min(0).optional(),
   isPublished: z.boolean().default(false),
-})
+});
 
-type FormValues = z.infer<typeof formSchema>
+type FormValues = z.input<typeof formSchema>
 
 export default function CreateCoursePage() {
   const router = useRouter()
@@ -50,7 +58,7 @@ export default function CreateCoursePage() {
   const [categories, setCategories] = useState<Category[]>([])
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema)as any,
+    resolver: zodResolver(formSchema),
     defaultValues: {
       title: "",
       description: "",
@@ -82,9 +90,22 @@ export default function CreateCoursePage() {
   const onSubmit = async (values: FormValues) => {
     try {
       setLoading(true)
-      console.log("values",values);
-      await axios.post("/api/admin/courses", values)
+      console.log("values", values);
+      const formData = new FormData();
+      Object.entries(values).forEach(([key, value]) => {
+        if (key === "thumbnail" && value) {
+          formData.append("thumbnail", value);
+        } else {
+          formData.append(key, String(value));
+        }
+      });
 
+      await axios.post("/api/admin/courses", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      
       toast.success("Course created successfully")
       router.push("/admin/courses")
     } catch (error: any) {
@@ -201,16 +222,23 @@ export default function CreateCoursePage() {
 
               {/* Thumbnail */}
               <div className="space-y-2">
-                <Label>Thumbnail URL</Label>
-                <Input
-                  className="rounded-xl"
-                  placeholder="https://..."
-                  {...form.register("thumbnail")}
+                <Label>Thumbnail</Label>
+                <Controller
+                  control={form.control}
+                  name="thumbnail"
+                  render={({ field }) => (
+                    <ThumbnailUpload
+                      value={field.value}
+                      onChange={(file) => field.onChange(file)}
+                    />
+                  )}
                 />
+
+
               </div>
             </div>
 
-            {/* Thumbnail Preview */}
+            {/* Thumbnail Preview
             {form.watch("thumbnail")?.trim() ? (
               <div className="overflow-hidden rounded-2xl border">
                 <img
@@ -219,7 +247,7 @@ export default function CreateCoursePage() {
                   className="w-full h-56 object-cover"
                 />
               </div>
-            ) : null}
+            ) : null} */}
 
             {/* Publish Switch */}
             <div className="flex items-center justify-between rounded-xl border p-4">

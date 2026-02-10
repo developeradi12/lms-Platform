@@ -46,6 +46,7 @@ export async function POST(req: Request) {
 
     const refreshToken = signRefreshToken({
       userId: user._id,
+      role: user.role,
     })
 
     // store refresh token in DB
@@ -63,10 +64,18 @@ export async function POST(req: Request) {
           email: user.email,
           role: user.role,
         },
-        accessToken,
       },
       { status: 200 }
     )
+
+    res.cookies.set("accessToken", accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+      maxAge: 15 * 60, // 15 minutes
+    })
+
 
     //  set refresh token cookie
     res.cookies.set("refreshToken", refreshToken, {

@@ -1,16 +1,18 @@
+"use client";
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
+
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const isLoggedIn = true; // later: read from cookies/session
+  const router = useRouter();
 
-  if (!isLoggedIn) {
-    redirect("/login");
-  }
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST", }); router.push("/login"); router.refresh(); // clears cached data
+  };
 
   return (
     <div className="min-h-screen flex">
@@ -25,7 +27,7 @@ export default function DashboardLayout({
                 href="/dashboard"
                 className="block rounded-lg px-3 py-2 hover:bg-gray-800 transition"
               >
-               Progress
+                Progress
               </Link>
             </li>
 
@@ -34,7 +36,7 @@ export default function DashboardLayout({
                 href="/dashboard/courses"
                 className="block rounded-lg px-3 py-2 hover:bg-gray-800 transition"
               >
-               Enrolled Courses
+                Enrolled Courses
               </Link>
             </li>
 
@@ -64,6 +66,16 @@ export default function DashboardLayout({
                 Profile
               </Link>
             </li>
+
+            <li>
+              <button
+                onClick={handleLogout}
+                className="block w-full text-left rounded-lg px-3 py-2 hover:bg-gray-800 transition"
+              >
+                Logout
+              </button>
+            </li>
+
           </ul>
         </nav>
       </aside>

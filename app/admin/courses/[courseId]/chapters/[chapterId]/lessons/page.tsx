@@ -4,7 +4,8 @@ import Link from "next/link"
 import React, { useEffect, useMemo, useState } from "react"
 import axios from "axios"
 import { toast } from "sonner"
-import { BookOpen } from "lucide-react"
+import { useParams } from "next/navigation"
+import { Pencil, Plus, Search, Trash2, Video } from "lucide-react"
 
 import {
   Card,
@@ -36,62 +37,64 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { Pencil, Plus, Search, Trash2 } from "lucide-react"
 
-
-type Course = {
+type Lesson = {
   _id: string
   title: string
-  price: number
-  isPublished: boolean
-  category?: {
-    _id: string
-    name: string
-  }
-  chaptersCount?: number
+  videoUrl?: string
+  duration?: number
+  isFreePreview?: boolean
+  order: number
   createdAt: string
 }
 
-export default function AdminCoursesPage() {
+export default function AdminLessonsPage() {
+  const params = useParams()
+
+  const courseId = params.courseId as string
+  const chapterId = params.chapterId as string
+
   const [search, setSearch] = useState("")
   const [loading, setLoading] = useState(true)
-  const [courses, setCourses] = useState<Course[]>([])
+  const [lessons, setLessons] = useState<Lesson[]>([])
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
-  const fetchCourses = async () => {
+  const fetchLessons = async () => {
     try {
       setLoading(true)
-      const res = await axios.get("/api/admin/courses")
 
-      setCourses(res.data?.courses || [])
+      const res = await axios.get(`/api/admin/courses/${courseId}/chapters/${chapterId}/lessons`)
+      
+      setLessons(res.data?.lessons || [])
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Failed to load courses")
+      toast.error(error?.response?.data?.message || "Failed to load lessons")
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    fetchCourses()
-  }, [])
+    if (!chapterId) return
+    fetchLessons()
+  }, [chapterId])
 
-  const filteredCourses = useMemo(() => {
+  const filteredLessons = useMemo(() => {
     const q = search.toLowerCase().trim()
 
-    return courses.filter((c) => {
-      return (
-        c.title.toLowerCase().includes(q) ||
-        (c.category?.name || "").toLowerCase().includes(q)
-      )
+    return lessons.filter((l) => {
+      const title = (l.title || "").toLowerCase()
+      return title.includes(q)
     })
-  }, [courses, search])
+  }, [lessons, search])
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (lessonId: string) => {
     try {
-      setDeletingId(id)
-      await axios.delete(`/api/admin/courses/${id}`)
-      toast.success("Course deleted")
-      fetchCourses()
+      setDeletingId(lessonId)
+
+      await axios.delete(`/api/admin/courses/${courseId}/chapters/${chapterId}/lessons/${lessonId}`)
+
+      toast.success("Lesson deleted")
+      fetchLessons()
     } catch (error: any) {
       toast.error(error?.response?.data?.message || "Delete failed")
     } finally {
@@ -104,116 +107,116 @@ export default function AdminCoursesPage() {
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Courses</h1>
+          <h1 className="text-2xl font-semibold">Lessons</h1>
           <p className="text-sm text-muted-foreground">
-            Manage all your courses from here.
+            Manage all lessons inside this chapter.
           </p>
         </div>
 
-        <Button asChild className="rounded-xl">
-          <Link href="/admin/courses/create">
-            <Plus className="mr-2 h-4 w-4" />
-            Create Course
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button asChild variant="outline" className="rounded-xl">
+            <Link href={`/admin/courses/${courseId}/chapters`}>
+              Back to Chapters
+            </Link>
+          </Button>
+
+          <Button asChild className="rounded-xl">
+            <Link
+              href={`/admin/courses/${courseId}/chapters/${chapterId}/lessons/create`}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Create Lesson
+            </Link>
+          </Button>
+        </div>
       </div>
 
-      {/* Search */}
+      {/* Search + Table */}
       <Card className="rounded-2xl">
         <CardHeader>
-          <CardTitle>All Courses</CardTitle>
+          <CardTitle>All Lessons</CardTitle>
           <CardDescription>
-            Search, view, edit or delete your courses.
+            Search, edit, delete lessons and manage preview status.
           </CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-4">
-          <div className="relative w-full sm:max-w-sm">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search courses..."
-              className="pl-9 rounded-xl"
-            />
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="relative w-full sm:max-w-sm">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search lessons..."
+                className="pl-9 rounded-xl"
+              />
+            </div>
+
+            <Badge variant="secondary" className="rounded-xl">
+              Total: {lessons.length}
+            </Badge>
           </div>
 
-          {/* Table */}
           <div className="rounded-xl border overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead>Status</TableHead>
-
+                  <TableHead>Lesson</TableHead>
+                  <TableHead>Preview</TableHead>
+                  <TableHead>Duration</TableHead>
+                  <TableHead>Order</TableHead>
                   <TableHead>Created</TableHead>
-                  <TableHead>Total Chapter</TableHead>
-                  <TableHead>Curriculum</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
 
               <TableBody>
                 {loading ? (
-                  Array.from({ length: 7 }).map((_, i) => (
+                  Array.from({ length: 6 }).map((_, i) => (
                     <TableRow key={i}>
-                      <TableCell colSpan={7}>
+                      <TableCell colSpan={6}>
                         <Skeleton className="h-10 w-full rounded-xl" />
                       </TableCell>
                     </TableRow>
                   ))
-                ) : filteredCourses.length === 0 ? (
+                ) : filteredLessons.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-10">
-                      No courses found.
+                    <TableCell colSpan={6} className="text-center py-10">
+                      No lessons found.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredCourses.map((course) => (
-                    <TableRow key={course._id}>
+                  filteredLessons.map((lesson) => (
+                    <TableRow key={lesson._id}>
                       <TableCell className="font-medium">
-                        {course.title}
-                      </TableCell>
-
-                      <TableCell>
-                        <Badge variant="secondary" className="rounded-xl">
-                          {course.category?.name || "No Category"}
-                        </Badge>
-                      </TableCell>
-
-                      <TableCell>
-                        {course.price === 0 ? "Free" : `₹${course.price}`}
+                        <div className="flex items-center gap-2">
+                          <Video className="h-4 w-4 text-muted-foreground" />
+                          {lesson.title}
+                        </div>
                       </TableCell>
 
                       <TableCell>
                         <Badge
                           className="rounded-xl"
-                          variant={course.isPublished ? "default" : "outline"}
+                          variant={lesson.isFreePreview ? "default" : "outline"}
                         >
-                          {course.isPublished ? "Published" : "Draft"}
+                          {lesson.isFreePreview ? "Free" : "Paid"}
                         </Badge>
                       </TableCell>
 
                       <TableCell className="text-sm text-muted-foreground">
-                        {new Date(course.createdAt).toLocaleDateString()}
+                        {lesson.duration ? `${lesson.duration} min` : "—"}
                       </TableCell>
 
                       <TableCell>
                         <Badge variant="secondary" className="rounded-xl">
-                          {course.chaptersCount ?? 0}
+                          {lesson.order ?? 0}
                         </Badge>
                       </TableCell>
-                      <TableCell>
-                        <Button asChild variant="secondary" className="rounded-xl">
-                          <Link href={`/admin/courses/${course._id}/chapters`}>
-                            <BookOpen className="mr-2 h-4 w-4" />
-                            Chapters
-                          </Link>
-                        </Button>
-                      </TableCell>
 
+                      <TableCell className="text-sm text-muted-foreground">
+                        {new Date(lesson.createdAt).toLocaleDateString()}
+                      </TableCell>
 
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
@@ -224,7 +227,9 @@ export default function AdminCoursesPage() {
                             variant="outline"
                             className="rounded-xl"
                           >
-                            <Link href={`/admin/courses/${course._id}/edit`}>
+                            <Link
+                              href={`/admin/courses/${courseId}/chapters/${chapterId}/lessons/${lesson._id}/edit`}
+                            >
                               <Pencil className="w-4 h-4" />
                             </Link>
                           </Button>
@@ -244,11 +249,10 @@ export default function AdminCoursesPage() {
                             <AlertDialogContent className="rounded-2xl">
                               <AlertDialogHeader>
                                 <AlertDialogTitle>
-                                  Delete Category?
+                                  Delete lesson?
                                 </AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  This action cannot be undone. This will
-                                  permanently delete the category.
+                                  This action cannot be undone.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
 
@@ -256,12 +260,13 @@ export default function AdminCoursesPage() {
                                 <AlertDialogCancel className="rounded-xl">
                                   Cancel
                                 </AlertDialogCancel>
+
                                 <AlertDialogAction
                                   className="rounded-xl"
-                                  onClick={() => handleDelete(course._id)}
-                                  disabled={deletingId === course._id}
+                                  onClick={() => handleDelete(lesson._id)}
+                                  disabled={deletingId === lesson._id}
                                 >
-                                  {deletingId === course._id
+                                  {deletingId === lesson._id
                                     ? "Deleting..."
                                     : "Delete"}
                                 </AlertDialogAction>
@@ -281,3 +286,5 @@ export default function AdminCoursesPage() {
     </div>
   )
 }
+
+

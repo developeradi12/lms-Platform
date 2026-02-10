@@ -77,6 +77,7 @@ export async function POST(req: Request) {
 
     const refreshToken = signRefreshToken({
       userId: user._id,
+      role:user.role
     })
 
     // 7) store refresh token in DB

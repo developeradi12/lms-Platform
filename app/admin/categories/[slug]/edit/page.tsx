@@ -21,7 +21,7 @@ const formSchema = z.object({
     metaDescription: z.string().optional(),
 })
 
-type FormValues = z.infer<typeof formSchema>
+type FormValues = z.input<typeof formSchema>
 
 export default function EditCategoryPage() {
 

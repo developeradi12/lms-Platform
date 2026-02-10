@@ -52,7 +52,7 @@ const courseSchema = z.object({
   duration: z.coerce.number().min(0, "Duration cannot be negative").optional(),
 })
 
-type CourseFormValues = z.infer<typeof courseSchema>
+type CourseFormValues = z.input<typeof courseSchema>
 
 export default function EditCoursePage() {
   const params = useParams()
@@ -71,7 +71,7 @@ export default function EditCoursePage() {
   const [lessonTitle, setLessonTitle] = useState<Record<string, string>>({})
 
   const form = useForm<CourseFormValues>({
-    resolver: zodResolver(courseSchema)as any,
+    resolver: zodResolver(courseSchema),
     defaultValues: {
       title: "",
       description: "",

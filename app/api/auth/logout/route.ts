@@ -24,9 +24,29 @@ export async function POST(req: Request) {
     );
 
     // cookies clear
-    res.cookies.set("accessToken", "", { maxAge: 0, path: "/" });
-    res.cookies.set("refreshToken", "", { maxAge: 0, path: "/" });
+    res.cookies.set("accessToken", "", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+      maxAge: 0,
+    })
 
+    res.cookies.set("refreshToken", "", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+      maxAge: 0,
+    })
+    res.cookies.set("role", "", {
+      httpOnly: false, // proxy needs to read it
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+      maxAge: 0,
+    })
+    
     return res;
   } catch (error: any) {
     return NextResponse.json(
