@@ -79,10 +79,11 @@ export default function AdminCategoriesPage() {
     fetchCategories()
   }, [])
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (slug: string) => {
     try {
-      setDeletingId(id)
-      await axios.delete(`/api/admin/categories/${id}`)
+      console.log("slug",slug);
+      setDeletingId(slug)
+      await axios.delete(`/api/admin/categories/${slug}`)
       toast.success("Category deleted")
       fetchCategories()
     } catch (error: any) {
@@ -93,7 +94,7 @@ export default function AdminCategoriesPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 overflow-x-auto">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -201,8 +202,8 @@ export default function AdminCategoriesPage() {
                       </TableCell>
 
                       <TableCell>
-                        <Badge variant="outline" className="rounded-xl">
-                          {cat.description}
+                        <Badge variant="secondary" >
+                          {cat.description?.trim().slice(0,40)}
                         </Badge>
                       </TableCell>
 
@@ -211,8 +212,8 @@ export default function AdminCategoriesPage() {
                       </TableCell>
 
                       <TableCell>
-                        <Badge variant="outline" className="rounded-xl">
-                          {cat.metaDescription}
+                        <Badge variant="secondary" className="">
+                          {cat.metaDescription?.trim().slice(0,40)}
                         </Badge>
                       </TableCell>
 
@@ -230,7 +231,7 @@ export default function AdminCategoriesPage() {
                             variant="outline"
                             className="rounded-xl"
                           >
-                            <Link href={`/admin/categories/${cat._id}/edit`}>
+                            <Link href={`/admin/categories/${cat.slug}/edit`}>
                               <Pencil className="w-4 h-4" />
                             </Link>
                           </Button>
@@ -264,10 +265,10 @@ export default function AdminCategoriesPage() {
                                 </AlertDialogCancel>
                                 <AlertDialogAction
                                   className="rounded-xl"
-                                  onClick={() => handleDelete(cat._id)}
-                                  disabled={deletingId === cat._id}
+                                  onClick={() => handleDelete(cat.slug)}
+                                  disabled={deletingId === cat.slug}
                                 >
-                                  {deletingId === cat._id
+                                  {deletingId === cat.slug
                                     ? "Deleting..."
                                     : "Delete"}
                                 </AlertDialogAction>

@@ -149,7 +149,7 @@ export default function EditCoursePage() {
 
   if (loading) {
     return (
-      <div className="p-6 space-y-6 max-w-4xl">
+      <div className="p-6 space-y-6 max-w-full">
         <Skeleton className="h-8 w-64 rounded-xl" />
         <Skeleton className="h-[520px] w-full rounded-2xl" />
       </div>
@@ -157,7 +157,7 @@ export default function EditCoursePage() {
   }
 
   return (
-    <div className="p-6 space-y-6 max-w-4xl">
+    <div className="p-6 space-y-6 max-w-full">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

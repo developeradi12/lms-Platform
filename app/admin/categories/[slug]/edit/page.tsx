@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react"
 import axios from "axios"
 import { useParams, useRouter } from "next/navigation";
 import { z } from "zod"
-import { useForm } from "react-hook-form"
+import { Controller, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -16,9 +16,10 @@ import { toast } from "sonner"
 const formSchema = z.object({
     name: z.string().min(2, "Name is required"),
     description: z.string().optional(),
-    image: z.string().min(1, "Image is required"),
+    image:z.string(),
     metaTitle: z.string().min(2, "Meta title is required"),
     metaDescription: z.string().optional(),
+    slug: z.string().optional()
 })
 
 type FormValues = z.input<typeof formSchema>
@@ -27,8 +28,8 @@ export default function EditCategoryPage() {
 
     const params = useParams()
     const router = useRouter()
-    const id = params?.slug as string
-    console.log(id);
+    const { slug } = useParams()
+    console.log("check", slug);
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false);
 
@@ -37,7 +38,7 @@ export default function EditCategoryPage() {
         defaultValues: {
             name: "",
             description: "",
-            image: "",
+            image: undefined,
             metaTitle: "",
             metaDescription: "",
         },
@@ -46,7 +47,7 @@ export default function EditCategoryPage() {
     const fetchCategory = async () => {
         try {
             setLoading(true);
-            const res = await axios.get(`/api/admin/categories/${id}`);
+            const res = await axios.get(`/api/admin/categories/${slug}`);
             console.log("res", res);
             const category = res.data?.category
 
@@ -63,34 +64,49 @@ export default function EditCategoryPage() {
                 image: category.image || "",
                 metaTitle: category.metaTitle || "",
                 metaDescription: category.metaDescription || "",
+                slug: category.slug
             })
-        } catch (error:any) {
+        } catch (error: any) {
             toast.error(error?.response?.data?.message || "Failed to load category")
-            router.push("/admin/categories")
+            // router.push("/admin/categories")
         } finally {
             setLoading(false)
         }
     }
 
     useEffect(() => {
-        if (id) fetchCategory();
-    }, [id]);
+        if (slug) fetchCategory();
+    }, [slug]);
 
     const onSubmit = async (values: FormValues) => {
+        console.log("SUBMIT TRIGGERED")
         console.log("FORM VALUES:", values)
-    try {
-      setSaving(true)
+        try {
+            setSaving(true);
+            console.log("values", values);
+            const formData = new FormData();
+            Object.entries(values).forEach(([key, value]) => {
+                if (key === "image" && value) {
+                    formData.append("image", value);
+                } else {
+                    formData.append(key, String(value));
+                }
+            });
 
-      await axios.put(`/api/admin/categories/${id}`, values)
+            await axios.put(`/api/admin/categories/${slug}`, formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            });
 
-      toast.success("Category updated successfully")
-      router.push("/admin/categories")
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Update failed")
-    } finally {
-      setSaving(false)
+            toast.success("Category updated successfully")
+            router.push("/admin/categories")
+        } catch (error: any) {
+            toast.error(error?.response?.data?.message || "Update failed")
+        } finally {
+            setSaving(false)
+        }
     }
-  }
 
 
     if (loading) {
@@ -118,7 +134,7 @@ export default function EditCategoryPage() {
                 </CardHeader>
 
                 <CardContent >
-                    <form  onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                         <div className="space-y-2">
                             <Label>Category Name</Label>
                             <Input
@@ -143,27 +159,31 @@ export default function EditCategoryPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Image URL</Label>
+                            <Label>Image</Label>
                             <Input
                                 className="rounded-xl"
-                                placeholder="https://..."
+                                placeholder="Paste image url..."
                                 {...form.register("image")}
                             />
-                            {form.formState.errors.image && (
-                                <p className="text-sm text-red-500">
-                                    {form.formState.errors.image.message}
-                                </p>
-                            )}
 
                             {form.watch("image")?.trim() ? (
                                 <div className="mt-3 overflow-hidden rounded-2xl border">
                                     <img
                                         src={form.watch("image")}
-                                        alt="preview"
-                                        className="w-full h-48 object-cover"
+                                        alt="image preview"
+                                        className="w-full h-52 object-cover"
                                     />
                                 </div>
                             ) : null}
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>Slug</Label>
+                            <Input
+                                className="rounded-xl"
+                                placeholder="slug"
+                                {...form.register("slug")}
+                            />
                         </div>
 
                         <div className="space-y-2">
@@ -189,6 +209,7 @@ export default function EditCategoryPage() {
                                 {...form.register("metaDescription")}
                             />
                         </div>  <div className="flex gap-3 pt-2">
+
                             <Button
                                 type="button"
                                 variant="outline"
@@ -204,7 +225,7 @@ export default function EditCategoryPage() {
                         </div>
                     </form>
                 </CardContent>
-            </Card>
-        </div>
+            </Card >
+        </div >
     )
 }

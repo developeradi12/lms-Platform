@@ -124,6 +124,19 @@ export default function CoursesPage() {
         return text.includes(q)
       })
     }
+    
+    /* {Note :-
+     Default behavior: of list sort function
+               list.sort() rearranges elements of the array in place. 
+               by default, it converts elements to strings and compares their UTF-16 code units } 
+               
+          Custom compare function:
+                    When you pass (a, b) => ..., JavaScript uses the return value to decide order:
+
+                     If result < 0 → a comes before b
+                     If result > 0 → b comes before a
+                     If result = 0 → order unchanged
+              */
 
     // sort
     if (sort === "latest") {

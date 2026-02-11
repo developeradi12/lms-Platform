@@ -100,7 +100,7 @@ export default function AdminCoursesPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className=" space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -119,7 +119,7 @@ export default function AdminCoursesPage() {
       </div>
 
       {/* Search */}
-      <Card className="rounded-2xl">
+      <Card className="rounded-2xl ">
         <CardHeader>
           <CardTitle>All Courses</CardTitle>
           <CardDescription>
@@ -143,15 +143,15 @@ export default function AdminCoursesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead className="px-4 py-3">Title</TableHead>
+                  <TableHead className="px-4 py-3">Category</TableHead>
+                  <TableHead className="px-4 py-3">Price</TableHead>
+                  <TableHead className="px-4 py-3">Status</TableHead>
 
-                  <TableHead>Created</TableHead>
-                  <TableHead>Total Chapter</TableHead>
-                  <TableHead>Curriculum</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="px-4 py-3">Created</TableHead>
+                  <TableHead className="px-4 py-3">Total Chapter</TableHead>
+                  <TableHead className="px-4 py-3">Curriculum</TableHead>
+                  <TableHead className="px-4 py-3">Actions</TableHead>
                 </TableRow>
               </TableHeader>
 
@@ -166,28 +166,28 @@ export default function AdminCoursesPage() {
                   ))
                 ) : filteredCourses.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-10">
+                    <TableCell colSpan={7} className="text-center py-10 ">
                       No courses found.
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredCourses.map((course) => (
-                    <TableRow key={course._id}>
-                      <TableCell className="font-medium">
-                        {course.title}
+                    <TableRow key={course._id} className="">
+                      <TableCell className="py-3 px-4 align-middle">
+                        {course.title.trim().slice(0, 20)}
                       </TableCell>
 
-                      <TableCell>
+                      <TableCell className="py-3 px-4 align-middle">
                         <Badge variant="secondary" className="rounded-xl">
                           {course.category?.name || "No Category"}
                         </Badge>
                       </TableCell>
 
-                      <TableCell>
+                     <TableCell className="py-3 px-4 align-middle">
                         {course.price === 0 ? "Free" : `₹${course.price}`}
                       </TableCell>
 
-                      <TableCell>
+                     <TableCell className="py-3 px-4 align-middle">
                         <Badge
                           className="rounded-xl"
                           variant={course.isPublished ? "default" : "outline"}
@@ -196,16 +196,16 @@ export default function AdminCoursesPage() {
                         </Badge>
                       </TableCell>
 
-                      <TableCell className="text-sm text-muted-foreground">
+                      <TableCell className="text-sm py-3 px-4 text-muted-foreground">
                         {new Date(course.createdAt).toLocaleDateString()}
                       </TableCell>
 
-                      <TableCell>
+                      <TableCell className="py-3 px-4 align-middle">
                         <Badge variant="secondary" className="rounded-xl">
                           {course.chaptersCount ?? 0}
                         </Badge>
                       </TableCell>
-                      <TableCell>
+                     <TableCell className="py-3 px-4 align-middle">
                         <Button asChild variant="secondary" className="rounded-xl">
                           <Link href={`/admin/courses/${course._id}/chapters`}>
                             <BookOpen className="mr-2 h-4 w-4" />
@@ -215,7 +215,7 @@ export default function AdminCoursesPage() {
                       </TableCell>
 
 
-                      <TableCell className="text-right">
+                      <TableCell className="py-3 px-4 align-middle">
                         <div className="flex items-center justify-end gap-2">
                           {/* Edit */}
                           <Button

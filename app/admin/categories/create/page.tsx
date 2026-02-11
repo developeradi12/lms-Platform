@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 
@@ -25,11 +25,10 @@ import ThumbnailUpload from "@/components/Upload"
 const formSchema = z.object({
   name: z.string().min(2, "Name is required"),
   description: z.string().optional(),
-  image: z.any().refine((file) => file instanceof File || file === undefined, {
-    message: "Thumbnail is required",
-  }),
-  metaTitle: z.string().min(2, "Meta title is required"),
+  image: z.instanceof(File, { message: "Thumbnail is required" }),
+  metaTitle: z.string().optional(),
   metaDescription: z.string().optional(),
+
 })
 
 type FormValues = z.input<typeof formSchema>
@@ -45,11 +44,18 @@ export default function CreateCategoryPage() {
     defaultValues: {
       name: "",
       description: "",
-      image: "",
+      image: undefined, //Empty string will fail validation in some cases that why write undefined
+
       metaTitle: "",
       metaDescription: "",
     },
   })
+  // const name = form.watch("name");
+  // const description = form.watch("description");
+  // const metaTitle = form.watch("metaTitle");
+  // const metaDescription = form.watch("metaDescription");
+
+
 
   const onSubmit = async (values: FormValues) => {
     console.log("FORM VALUES:", values)
@@ -60,7 +66,7 @@ export default function CreateCategoryPage() {
       Object.entries(values).forEach(([key, value]) => {
         if (key === "image" && value) {
           formData.append("image", value);
-        } else {
+        } else if (value !== undefined && value !== "") {
           formData.append(key, String(value));
         }
       });
@@ -79,9 +85,23 @@ export default function CreateCategoryPage() {
     }
   }
 
+  // useEffect(() => {
+
+  //   // Fill metaTitle ONLY if empty
+  //   if (!metaTitle && name) {
+  //     form.setValue("metaTitle", name);
+  //   }
+
+  //   // Fill metaDescription ONLY if empty
+  //   if (!metaDescription && description) {
+  //     form.setValue("metaDescription", description);
+  //   }
+
+  // }, [name, description]);
+
 
   return (
-    <div className="p-6 max-w-2xl space-y-6">
+    <div className=" max-w-full space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -154,7 +174,8 @@ export default function CreateCategoryPage() {
 
             {/* Meta Title */}
             <div className="space-y-2">
-              <Label>Meta Title *</Label>
+              <Label>Meta Title (Optional)</Label>
+
               <Input
                 className="rounded-xl"
                 placeholder="SEO title..."

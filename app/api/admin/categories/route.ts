@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 import connectDb from "@/lib/db"
 import Category from "@/models/Category"
-import slugify from "slugify"
 import path from "path";
 import fs from "fs/promises";
 
@@ -33,10 +32,7 @@ export async function POST(req: Request) {
     const description = formData.get("description") as string;
     const metaTitle = formData.get("metaTitle") as string;
     const metaDescription = formData.get("metaDescription") as string;
-    const imageFile = formData.get("image") as File | null;
-
-
-    let imageUrl = "";
+    const imageFile = formData.get("image") as File
 
     if (!name?.trim()) {
       return NextResponse.json(
@@ -44,58 +40,51 @@ export async function POST(req: Request) {
         { status: 400 }
       )
     }
+    // const exists = await Category.findOne({ name })
 
-    if (!imageFile) {
-      return NextResponse.json(
-        { success: false, message: "Category image is required" },
-        { status: 400 }
-      )
-    }
+    // if (exists) {
+    //   return NextResponse.json(
+    //     { message: "Category exists" },
+    //     { status: 409 }
+    //   )
+    // }
 
-    const slug = slugify(name, { lower: true, strict: true });
-
-    const exists = await Category.findOne({
-      $or: [{ name }, { slug }],
-    });
-
-    if (exists) {
-      return NextResponse.json(
-        { success: false, message: "Category already exists" },
-        { status: 409 }
-      );
-    }
-
+    let imageUrl = "";
     if (imageFile.size > 2 * 1024 * 1024) {
       return NextResponse.json(
         { success: false, message: "Image must be under 2MB" },
         { status: 400 }
       );
     }
+     console.log("Thumbnail received:", imageFile.name);
+    if (imageFile) {
+      const bytes = await imageFile.arrayBuffer()
+      const buffer = Buffer.from(bytes)
 
-      const bytes = await imageFile.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    const fileName = `${Date.now()}-${imageFile.name}`;
+      const fileName = `${Date.now()}-${imageFile.name}`
 
-    const uploadDir = path.join(process.cwd(), "public/uploads");
+      const uploadDir = path.join(
+        process.cwd(),
+        "public/uploads"
+      )
 
-    await fs.mkdir(uploadDir, { recursive: true });
+      await fs.mkdir(uploadDir, { recursive: true })
 
-    const filePath = path.join(uploadDir, fileName);
+      await fs.writeFile(
+        path.join(uploadDir, fileName),
+        buffer
+      )
 
-    await fs.writeFile(filePath, buffer);
+      imageUrl = `/uploads/${fileName}`
+    }
 
-    // path to store in DB
-    imageUrl = `/uploads/${fileName}`;
-
-    
 
     const category = await Category.create({
-      name,
-      slug,
+     name,
       description,
-      image: imageUrl,
       metaTitle,
       metaDescription,
+      image: imageUrl,
     })
 
     return NextResponse.json(

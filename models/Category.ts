@@ -1,21 +1,34 @@
-import mongoose, { Schema, models } from "mongoose"
+import mongoose, { Schema, model, models } from "mongoose"
 import slugify from "slugify"
 
-const CategorySchema = new Schema(
+interface ICategory {
+  name: string;
+  slug?: string;
+  description?: string;
+  image?: string;
+  metaTitle?: string;
+  metaDescription?: string;
+}
+const CategorySchema = new Schema<ICategory>(
   {
     name: {
       type: String,
       required: true,
       trim: true,
+      lowercase: true,
       unique: true,
+      index: true, // 🔥 faster search
     },
 
     slug: {
       type: String,
-      required: true,
       unique: true,
       lowercase: true,
       trim: true,
+      index: true, //for query to find
+      // default: function () {
+      //   return slugify(this.name, { lower: true, strict: true });
+      // },
     },
 
     description: {
@@ -31,7 +44,6 @@ const CategorySchema = new Schema(
 
     metaTitle: {
       type: String,
-      required: true,
       trim: true,
     },
 
@@ -46,60 +58,65 @@ const CategorySchema = new Schema(
   { timestamps: true }
 )
 
+async function generateUniqueSlug(name: string) {
+  let slug = slugify(name, { lower: true, strict: true });
 
-CategorySchema.pre("save", function (next) {
-  // slug default
-  if (!this.slug || this.slug.trim() === "") {
-    this.slug = this.name
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9\s-]/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/-+/g, "-")
+  let exists = await mongoose.models.Category.findOne({ slug });
+
+  // handle duplicates
+  while (exists) {
+    slug = `${slug}-${Math.floor(Math.random() * 10000)}`;
+    exists = await mongoose.models.Category.findOne({ slug });
   }
 
-  if (!this.metaTitle || this.metaTitle.trim() === "") {
-    this.metaTitle = this.name
+  return slug;
+}
+
+CategorySchema.pre("save", async function (next) {
+  // only regenerate if name changed
+  if (this.isModified("name")) {
+    this.slug = await generateUniqueSlug(this.name);
   }
 
-  if (!this.metaDescription || this.metaDescription.trim() === "") {
-    this.metaDescription = this.description
+  // SEO defaults
+  if (!this.metaTitle) {
+    this.metaTitle = this.name;
   }
 
-  next()
-})
+  if (!this.metaDescription) {
+    this.metaDescription = this.description;
+  }
 
-CategorySchema.pre("findOneAndUpdate", function (next) {
+  next();
+});
+
+
+CategorySchema.pre("findOneAndUpdate", async function (next) {
   const update: any = this.getUpdate()
-  const $set = update.$set || update
-
-  // slug auto update if name changed and slug not given
-  if ((!$set.slug || $set.slug.trim?.() === "") && $set.name) {
-    $set.slug = $set.name
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9\s-]/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/-+/g, "-")
+  const name = update?.name || update?.$set?.name;
+  const incomingSlug = update?.slug || update?.$set?.slug
+  if (incomingSlug) {
+    return next()
   }
 
-  // metaTitle default
-  if ((!$set.metaTitle || $set.metaTitle.trim?.() === "") && $set.name) {
-    $set.metaTitle = $set.name
+  // regenerate slug only if name updated
+  if (name) {
+    const slug = await generateUniqueSlug(name);
+
+    if (update.$set) {
+      update.$set.slug = slug;
+      update.$set.metaTitle ??= name;
+    } else {
+      update.slug = slug;
+      update.metaTitle ??= name;
+    }
   }
 
-  // metaDescription default
-  if (
-    (!$set.metaDescription || $set.metaDescription.trim?.() === "") &&
-    $set.description
-  ) {
-    $set.metaDescription = $set.description
-  }
+  this.setUpdate(update);
 
-  update.$set = $set
-  this.setUpdate(update)
+  next();
+});
 
-  next()
-})
-
-export default models.Category || mongoose.model("Category", CategorySchema)
+const Category =
+  models.Category || model<ICategory>("Category", CategorySchema);
+export default Category;
