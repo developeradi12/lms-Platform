@@ -104,7 +104,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ slug: st
                 metaTitle,
                 metaDescription,
                 image: imageUrl,
-                newSlug:slug
+                slug:newSlug
             },
             { new: true })
 
