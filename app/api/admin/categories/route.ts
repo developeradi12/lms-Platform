@@ -56,7 +56,7 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-     console.log("Thumbnail received:", imageFile.name);
+    console.log("Thumbnail received:", imageFile.name);
     if (imageFile) {
       const bytes = await imageFile.arrayBuffer()
       const buffer = Buffer.from(bytes)
@@ -80,7 +80,7 @@ export async function POST(req: Request) {
 
 
     const category = await Category.create({
-     name,
+      name,
       description,
       metaTitle,
       metaDescription,
@@ -93,6 +93,16 @@ export async function POST(req: Request) {
     )
   } catch (error: any) {
     console.error("CREATE CATEGORY ERROR:", error)
+    console.log("course create error", error)
+    if (error?.code === 11000) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Course already exists"
+        },
+        { status: 409 } // conflict
+      )
+    }
     return NextResponse.json(
       { success: false, message: error.message || "Internal Server Error" },
       { status: 500 }

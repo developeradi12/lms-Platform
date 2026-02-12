@@ -104,9 +104,7 @@ export async function POST(req: Request) {
         const price = Number(formData.get("price"));
         const durationValue = formData.get("duration")
         const duration = durationValue ? Number(durationValue) : 0
-
         const isPublished = formData.get("isPublished") === "true";
-
         const thumbnailFile = formData.get("thumbnail") as File | null;
         let thumbnailPath = "";
         if (thumbnailFile) {
@@ -151,9 +149,8 @@ export async function POST(req: Request) {
             { status: 201 }
         )
     } catch (error: any) {
-        console.log("course create error",error.message)
         return NextResponse.json(
-            { success: false, message: error.message },
+            { success: false, message: "Something went wrong" },
             { status: 500 }
         )
     }

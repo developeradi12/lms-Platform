@@ -36,7 +36,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Pencil, Search, Trash2 } from "lucide-react"
-import { slugify } from "../../../lib/slugify"
+// import { slugify } from "../../../lib/slugify"
 
 
 type User = {
@@ -190,9 +190,9 @@ export default function AdminCoursesPage() {
                             variant="outline"
                             className="rounded-xl"
                           >
-                            <Link href={`/admin/users/${slugify(user.name)}-${user._id}`}>
+                            {/* <Link href={`/admin/users/${slugify(user.name)}-${user._id}`}>
                               <Pencil className="w-4 h-4" />
-                            </Link>
+                            </Link> */}
                           </Button>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>

@@ -79,6 +79,8 @@ export default function CreateCategoryPage() {
       toast.success("Category uploaded successfully")
       router.push("/admin/categories")
     } catch (error: any) {
+      console.log(error.response?.data);
+      alert(error.response?.data?.message); 
       toast.error(error?.response?.data?.message || "Something went wrong")
     } finally {
       setLoading(false)
