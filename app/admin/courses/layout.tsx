@@ -5,7 +5,7 @@ export default function CourseLayout({
 }) {
 
   return (
-    <div className="w-full px-6" >
+    <div className="w-full px-6 overflow-auto" >
       {children}
     </div>
   );

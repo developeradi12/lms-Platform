@@ -22,15 +22,17 @@ export async function GET(req: NextRequest) {
     const skip = (page - 1) * limit;
 
     // Search filter
-    const query = search
-      ? {
-          $or: [
-            { name: { $regex: search, $options: "i" } },
-            { email: { $regex: search, $options: "i" } },
-          ],
-        }
-      : {};
-
+    // ✅ Always filter only STUDENTS
+    const query: any = {
+      role: "STUDENT",
+    }
+    console.log("")
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+      ]
+    }
     // Fetch users
     const users = await User.find(query).lean()  //lean() improves performance by returning plain JS objects instead of heavy Mongoose documents.”
       .select("-password") //  never send password this remove the password and send the user 
@@ -38,14 +40,13 @@ export async function GET(req: NextRequest) {
       .skip(skip)
       .limit(limit)
       .lean();
-
-    const totalUsers = await User.countDocuments(query);
-
+    console.log(users);
+    const totalStudents = await User.countDocuments(query);
+    console.log(totalStudents);
     return NextResponse.json({
       users,
-      totalUsers,
-      currentPage: page,
-      totalPages: Math.ceil(totalUsers / limit),
+      totalStudents,
+      limit,
     });
 
   } catch (error) {

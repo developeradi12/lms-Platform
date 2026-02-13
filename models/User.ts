@@ -1,5 +1,4 @@
-import mongoose, { models, Schema } from "mongoose"
-import { EnrolledCourseSchema } from "./Enrollcourses"
+import mongoose, { models, Schema, Types } from "mongoose"
 import bcrypt from "bcryptjs"
 const UserSchema = new Schema(
   {
@@ -39,10 +38,35 @@ const UserSchema = new Schema(
       default: "",
     },
 
-    enrolledCourses: {
-      type: [EnrolledCourseSchema],
-      default: [],
-    },
+    enrolledCourses: [
+      {
+        type: Types.ObjectId,
+        ref: "enrollment"
+      }
+    ],
+
+
+    wishlist:
+      [
+        {
+          type: Types.ObjectId,
+          ref: "wishlist"
+        }
+      ],
+
+    review: [
+      {
+        type: Types.ObjectId,
+        ref: "review"
+      }
+    ],
+
+    order: [
+      {
+        type: Types.ObjectId,
+        ref: "Order"
+      }
+    ],
   },
   { timestamps: true }
 )

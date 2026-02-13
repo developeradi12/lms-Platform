@@ -1,12 +1,85 @@
 import { generateUniqueSlug } from "@/lib/generateUniqueSlug";
-import mongoose, { Schema, models } from "mongoose"
+import mongoose, { Schema, Types, models } from "mongoose"
 import slugify from "slugify";
 
 
 const CourseSchema = new Schema(
   {
-    title: { type: String, required: true, trim: true },
-    description: { type: String, default: "" },
+    title: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 120,
+    },
+    slug: {
+      type: String,
+      unique: true,
+      lowercase: true,
+      trim: true,
+      index: true,
+    },
+    description: {
+      type: String,
+      required: true,
+      maxlength: 5000,
+    },
+    thumbnail: {
+      type: String,
+      default: ""
+    },
+    instructor: {
+      type: Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
+    category: {
+      type: Types.ObjectId,
+      ref: "Category",
+      required: true,
+      index: true,
+    },
+    chapters: [
+      {
+        type: Types.ObjectId,
+        ref: "Chapter"
+      }
+    ],
+    price: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    duration: {
+      type: Number, // minutes
+      default: 0,
+    },
+    level: {
+      type: String,
+      enum: ["BEGINNER", "INTERMEDIATE", "ADVANCED"],
+      default: "BEGINNER",
+    },
+    isPublished: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    averageRating: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 5,
+    },
+
+    totalReviews: {
+      type: Number,
+      default: 0,
+    },
+    totalEnrollments: {
+      type: Number,
+      default: 0,
+    },
+
     metaTitle: {
       type: String,
       trim: true,
@@ -16,30 +89,13 @@ const CourseSchema = new Schema(
       type: String,
       trim: true,
     },
-    thumbnail: { type: String, default: "" },
-    price: { type: Number, default: 0 },
-    slug: {
-      type: String,
-      unique: true,
-      lowercase: true,
-      trim: true,
-      index: true,
-    },
-    duration: { type: Number, default: 0 },
-    category: { type: Schema.Types.ObjectId, ref: "Category", required: true },
-    instructor: { type: Schema.Types.ObjectId, ref: "User" },
-    chapters: [{ type: mongoose.Schema.Types.ObjectId, ref: "Chapter" }],
-    isPublished: { type: Boolean, default: false },
-    averageRating: { type: Number, default: 0 },
-    totalReviews: { type: Number, default: 0 },
-
   },
   { timestamps: true }
 )
 CourseSchema.pre("save", async function (next) {
   // generate only if not provided
   if (!this.slug) {
-    this.slug = await generateUniqueSlug(this.title,mongoose.models.Course);
+    this.slug = await generateUniqueSlug(this.title, mongoose.models.Course);
   }
 
   // sanitize manual slug

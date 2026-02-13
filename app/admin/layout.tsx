@@ -23,7 +23,7 @@ export default function AdminLayout({
       <AppSidebar variant="inset" />
       <SidebarInset className="bg-gray-50" >
         <SiteHeader />
-        <div className=" flex justify-center items-center max-w-7xl p-2 m-2">
+        <div className=" flex justify-center items-center max-w-7xl p-2 m-2 overflow-scroll">
           {children}
         </div>
 

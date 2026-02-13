@@ -1,6 +1,4 @@
 "use client"
-
-import Link from "next/link"
 import React, { useEffect, useMemo, useState } from "react"
 import axios from "axios"
 import { toast } from "sonner"
@@ -22,44 +20,35 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { Pencil, Search, Trash2 } from "lucide-react"
-// import { slugify } from "../../../lib/slugify"
+import { Eye, Pencil, Search } from "lucide-react"
+import UserViewModal from "./_modal/user-view"
+import Link from "next/link"
 
 
 type User = {
   _id: string
   name: string
-  email: string
-  role: "admin" | "student"
+  email: string,
+  role:"STUDENT",
   enrolledCourses: number
   createdAt: string
 }
 
-export default function AdminCoursesPage() {
+
+export default function AdminStudentsPage() {
   const [users, setUsers] = useState<User[]>([])
   const [search, setSearch] = useState("")
   const [loading, setLoading] = useState(true)
-  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [open, setOpen] = useState(false)
 
   const fetchUsers = async () => {
     try {
       setLoading(true)
       const res = await axios.get("/api/admin/users")
-      console.log("fetch users", res)
       setUsers(res.data?.users || [])
+      console.log(res.data)
     } catch (error: any) {
       toast.error(error?.response?.data?.message || "Failed to load users")
     } finally {
@@ -71,40 +60,49 @@ export default function AdminCoursesPage() {
     fetchUsers()
   }, [])
 
-  const filteredUsers = useMemo(() => { //useMemo is a React hook that memoizes (caches) the result of a calculation so it doesn’t run again unless dependencies change.
+
+  // ✅ search filter
+  const filteredUsers = useMemo(() => {
     if (!search) return users
+
     const q = search.toLowerCase()
+
     return users.filter(
       (u) =>
-        u.name.toLowerCase().includes(q) ||
-        u.email.toLowerCase().includes(q)
+        u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
     )
   }, [users, search])
 
-  const handleDelete = async (id: string) => {
-    try {
-      setDeletingId(id)
+  // const handleDelete = async (id: string) => {
+  //   const prevUsers = users // backup for rollback
 
-      // await axios.delete(`/api/admin/users/${id}`)
+  //   try {
+  //     setDeletingId(id)
 
-      // ✅ Optimistic update (NO refetch)
-      setUsers(prev => prev.filter(u => u._id !== id))
+  //     // ✅ Optimistic UI
+  //     setUsers((prev) => prev.filter((u) => u._id !== id))
 
-      toast.success("User deleted")
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Delete failed")
-    } finally {
-      setDeletingId(null)
-    }
-  }
+  //     // ✅ API call
+  //     await axios.delete(`/api/admin/users/${id}`)
+
+  //     toast.success("Student deleted")
+  //   } catch (error: any) {
+  //     // rollback
+  //     setUsers(prevUsers)
+
+  //     toast.error(error?.response?.data?.message || "Delete failed")
+  //   } finally {
+  //     setDeletingId(null)
+  //   }
+  // }
 
   return (
-    <div className="p-6">
+    <div className="p-6 w-full">
       <Card className="rounded-2xl">
         <CardHeader>
-          <CardTitle>All Users</CardTitle>
+          <CardTitle>All Students</CardTitle>
           <CardDescription>
-            Manage registered users, roles, and enrollments.
+            Manage registered students and view details.
           </CardDescription>
         </CardHeader>
 
@@ -113,26 +111,33 @@ export default function AdminCoursesPage() {
           <div className="relative w-full sm:max-w-sm">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search users..."
+              placeholder="Search students..."
               className="pl-9 rounded-xl"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
 
+          {/* Total */}
+          <div className="mb-4">
+            <Card className="rounded-2xl">
+              <CardContent className="p-4 flex justify-between items-center">
+                <p className="text-muted-foreground">Total Students</p>
+                <p className="text-2xl font-bold">{users.length}</p>
+              </CardContent>
+            </Card>
+          </div>
+
           {/* Table */}
-          <div className="rounded-xl border overflow-hidden">
+          <div className="rounded-xl border">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Enrolled</TableHead>
-                  <TableHead>Joined</TableHead>
-                  <TableHead className="text-right">
-                    Actions
-                  </TableHead>
+                  <TableHead className="px-6 py-3">Name</TableHead>
+                  <TableHead className="px-6 py-3">Email</TableHead>
+                  <TableHead className="px-6 py-3">Role</TableHead>
+                  <TableHead className="px-6 py-3">Joined</TableHead>
+                  <TableHead className="px-6 text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
 
@@ -140,99 +145,65 @@ export default function AdminCoursesPage() {
                 {loading ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={i}>
-                      <TableCell colSpan={6}>
+                      <TableCell colSpan={5}>
                         <Skeleton className="h-10 w-full rounded-xl" />
                       </TableCell>
                     </TableRow>
                   ))
                 ) : filteredUsers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-10">
-                      No users found.
+                    <TableCell className="py-3 px-4 align-middle" colSpan={5}>
+                      No students found.
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredUsers.map((user) => (
                     <TableRow key={user._id}>
-                      <TableCell className="font-medium">
+                      <TableCell className="px-6 py-4 font-medium">
                         {user.name}
                       </TableCell>
 
-                      <TableCell>{user.email}</TableCell>
+                      <TableCell className="px-6 py-4 font-medium">
+                        {user.email}
+                      </TableCell>
 
-                      <TableCell>
-                        <Badge
-                          variant={
-                            user.role === "admin"
-                              ? "default"
-                              : "secondary"
-                          }
-                          className="rounded-xl"
-                        >
+                      <TableCell className="px-6 py-4 font-medium">
+                        {/* <Badge variant="default" className="rounded-xl">
                           {user.role}
-                        </Badge>
+                        </Badge> */}
                       </TableCell>
 
-                      <TableCell>
-                        {user.enrolledCourses}
-                      </TableCell>
-
-                      <TableCell className="text-muted-foreground text-sm">
+                      <TableCell className="px-6 py-4 text-muted-foreground text-sm">
                         {new Date(user.createdAt).toLocaleDateString()}
                       </TableCell>
 
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          {/* Edit */}
+                      <TableCell className="py-3 px-4 align-middle">
+                        <div className="flex justify-end gap-2">
+                          {/* View */}
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="rounded-xl"
+                            onClick={() => {
+                              setSelectedUser(user)
+                              setOpen(true)
+                            }}
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+
+                          {/*edit*/}
                           <Button
                             asChild
                             size="icon"
                             variant="outline"
                             className="rounded-xl"
                           >
-                            {/* <Link href={`/admin/users/${slugify(user.name)}-${user._id}`}>
+                            <Link href={`/admin/users/${user._id}`}>
                               <Pencil className="w-4 h-4" />
-                            </Link> */}
+                            </Link>
                           </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                size="icon"
-                                variant="destructive"
-                                className="rounded-xl"
-                                onClick={() => handleDelete(user._id)}
-                                disabled={deletingId === user._id}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent className="rounded-2xl">
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>
-                                  Delete Category?
-                                </AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This action cannot be undone. This will
-                                  permanently delete the user.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
 
-                              <AlertDialogFooter>
-                                <AlertDialogCancel className="rounded-xl">
-                                  Cancel
-                                </AlertDialogCancel>
-                                <AlertDialogAction
-                                  className="rounded-xl"
-                                  onClick={() => handleDelete(user._id)}
-                                  disabled={deletingId === user._id}
-                                >
-                                  {deletingId === user._id
-                                    ? "Deleting..."
-                                    : "Delete"}
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -241,6 +212,9 @@ export default function AdminCoursesPage() {
               </TableBody>
             </Table>
           </div>
+
+          {/* Modal */}
+          <UserViewModal user={selectedUser} open={open} onOpenChange={setOpen} />
         </CardContent>
       </Card>
     </div>
