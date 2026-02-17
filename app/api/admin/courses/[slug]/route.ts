@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import connectDb from "@/lib/db"
-import Course from "@/models/Course"
+import {Course} from "@/models/Course"
 import "@/models/User"
 import "@/models/Chapter"
 import "@/models/Lesson"

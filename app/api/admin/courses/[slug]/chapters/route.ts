@@ -1,14 +1,10 @@
 import connectDb from "@/lib/db";
 import Chapter from "@/models/Chapter";
-import Course from "@/models/Course";
+import {Course} from "@/models/Course";
 import Lesson from "@/models/Lesson";
-import mongoose from "mongoose";
 import { NextResponse } from "next/server";
 
-
-
 //get 
-
 export async function GET(req: Request,
     { params }: { params: Promise<{ slug: string }> }) {
     try {

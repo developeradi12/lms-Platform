@@ -23,7 +23,7 @@ const UserSchema = new Schema(
     password: {
       type: String,
       required: true, // ✅ signup + login ke liye required
-      select: false,  // ✅ security (find me password by default nahi aayega)
+      select: true,  // ✅ security (find me password by default nahi aayega)
     },
 
     role: {

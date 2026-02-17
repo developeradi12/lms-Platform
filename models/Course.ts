@@ -1,5 +1,5 @@
 import { generateUniqueSlug } from "@/lib/generateUniqueSlug";
-import mongoose, { Schema, Types, models } from "mongoose"
+import mongoose, { Schema, Types, model, models } from "mongoose"
 import slugify from "slugify";
 
 
@@ -110,4 +110,5 @@ CourseSchema.pre("save", async function (next) {
   next();
 });
 
-export default models.Course || mongoose.model("Course", CourseSchema)
+export const Course =
+  models.Course || model("Course", CourseSchema)

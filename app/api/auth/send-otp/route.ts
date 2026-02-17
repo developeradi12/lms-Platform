@@ -1,5 +1,6 @@
 import connectDb from "@/lib/db";
 import Otp from "@/models/Otp";
+import User from "@/models/User";
 import { sendOtpMail } from "@/utils/mailer";
 import { generateOtp, hashOtp } from "@/utils/otp";
 import { NextResponse } from "next/server";
@@ -16,6 +17,14 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { success: false, message: "Email is required" },
         { status: 400 }
+      )
+    }
+    // If user already exists & verified
+    const existing = await User.findOne({ email,purpose:"SIGNUP" })
+    if (existing && existing.isVerified) {
+      return NextResponse.json(
+        { success: false, message: "User already exists" },
+        { status: 409 }
       )
     }
 

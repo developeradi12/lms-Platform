@@ -1,17 +1,23 @@
-import jwt from "jsonwebtoken"
+import { SignJWT } from "jose"
 
-export const signAccessToken = (payload: object) => {
-  return jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET!, {
-    expiresIn: "15m",
-  })
+const getSecret = (key: string) => new TextEncoder().encode(key)
+
+export async function signAccessToken(payload: any) {
+  const secret = getSecret(process.env.ACCESS_TOKEN_SECRET!)
+
+  return await new SignJWT(payload)
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime("15m")
+    .sign(secret)
 }
 
-export const signRefreshToken = (payload: object) => {
-  return jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET!, {
-    expiresIn: "7d",
-  })
-}
+export async function signRefreshToken(payload: any) {
+  const secret = getSecret(process.env.REFRESH_TOKEN_SECRET!)
 
-export const verifyRefreshToken = (token: string) => {
-  return jwt.verify(token, process.env.REFRESH_TOKEN_SECRET!)
+  return await new SignJWT(payload)
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime("7d")
+    .sign(secret)
 }

@@ -69,15 +69,15 @@ export async function POST(req: Request) {
     }
 
     // 6) create tokens
-    const accessToken = signAccessToken({
+    const accessToken = await signAccessToken({
       userId: user._id,
       email: user.email,
       role: user.role,
     })
 
-    const refreshToken = signRefreshToken({
+    const refreshToken = await signRefreshToken({
       userId: user._id,
-      role:user.role
+      role: user.role
     })
 
     // 7) store refresh token in DB
@@ -88,7 +88,7 @@ export async function POST(req: Request) {
     const res = NextResponse.json(
       {
         success: true,
-       message: "Signup successful",
+        message: "Signup successful",
         user: {
           _id: user._id,
           name: user.name,
@@ -99,13 +99,21 @@ export async function POST(req: Request) {
       },
       { status: 200 }
     )
+    // set cookies
+    res.cookies.set("accessToken", accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+      maxAge: 60 * 15,
+    })
 
     res.cookies.set("refreshToken", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
       path: "/",
-      maxAge: 7 * 24 * 60 * 60, // 7 days
+      maxAge: 60 * 60 * 24 * 7,
     })
 
     return res

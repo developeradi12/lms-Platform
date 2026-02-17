@@ -1,26 +1,22 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import connectDb from "@/lib/db"
 import User from "@/models/User"
 import bcrypt from "bcryptjs"
 import { signAccessToken, signRefreshToken } from "@/utils/jwt"
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     await connectDb()
+    const { email, password } = await req.json()
 
-    const body = await req.json()
-    const { email, password } = body
-
-    if (!email?.trim() || !password?.trim()) {
+    if (!email || !password) {
       return NextResponse.json(
-        { success: false, message: "Email and password are required" },
+        { success: false, message: "Email & password required" },
         { status: 400 }
       )
     }
 
-    // find user
-    const user = await User.findOne({ email }).select("+password")
-
+    const user = await User.findOne({ email })
     if (!user) {
       return NextResponse.json(
         { success: false, message: "Invalid credentials" },
@@ -28,69 +24,55 @@ export async function POST(req: Request) {
       )
     }
 
-    //  compare password
-    const isMatch = await bcrypt.compare(password, user.password)
-
-    if (!isMatch) {
+    const ok = await bcrypt.compare(password, user.password)
+    if (!ok) {
       return NextResponse.json(
         { success: false, message: "Invalid credentials" },
         { status: 401 }
       )
     }
 
-    const accessToken = signAccessToken({
-      userId: user._id,
+    const accessToken = await signAccessToken({
+      userId: user._id.toString(),
       email: user.email,
       role: user.role,
     })
 
-    const refreshToken = signRefreshToken({
-      userId: user._id,
+    const refreshToken = await signRefreshToken({
+      userId: user._id.toString(),
       role: user.role,
     })
 
-    // store refresh token in DB
+    // Store refresh token in DB
     user.refreshToken = refreshToken
     await user.save()
 
-    //  response
     const res = NextResponse.json(
-      {
-        success: true,
-        message: "Login successful",
-        user: {
-          _id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-        },
-      },
+      { success: true, message: "Login success" , user},
       { status: 200 }
     )
 
+    // Cookies (Secure)
     res.cookies.set("accessToken", accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
       path: "/",
-      maxAge: 15 * 60, // 15 minutes
+      maxAge: 60 * 15,
     })
 
-
-    //  set refresh token cookie
     res.cookies.set("refreshToken", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
       path: "/",
-      maxAge: 7 * 24 * 60 * 60, // 7 days
+      maxAge: 60 * 60 * 24 * 7,
     })
 
     return res
-  } catch (error: any) {
-    console.log("LOGIN ERROR:", error)
+  } catch (err: any) {
     return NextResponse.json(
-      { success: false, message: error.message || "Internal Server Error" },
+      { success: false, message: err.message || "Server error" },
       { status: 500 }
     )
   }

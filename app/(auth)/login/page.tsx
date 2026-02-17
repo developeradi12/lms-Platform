@@ -9,7 +9,6 @@
 import React, { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import axios from "axios"
 import { toast } from "sonner"
 
 import { useForm } from "react-hook-form"
@@ -36,14 +35,15 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 
 import { Eye, EyeOff } from "lucide-react"
+import api from "@/lib/api"
 
 const loginSchema = z.object({
   email: z.string().email("Enter a valid email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 })
 
-// type LoginValues = z.input<typeof loginSchema>
-type LoginValues = z.input<typeof loginSchema>
+// type LoginValues = z.input<typeof loginSchema> // infers the input type, which is the same as output in this case
+type LoginValues = z.infer<typeof loginSchema>// automaticslly infers the type from the schema
 
 export default function Login() {
   const router = useRouter()
@@ -65,11 +65,17 @@ export default function Login() {
     try {
       setLoading(true)
 
-      const res = await axios.post("/api/auth/login", values)
-       console.log("login_response",res);
+      const res = await api.post("/api/auth/login", values)
+      // console.log("login_response", res);
       toast.success(res.data?.message || "Login successful")
+      // if (res.data?.user?.role === "ADMIN") {
+      //   router.push("/admin/dashboard")
+      // }else if(res.data?.user?.role === "INSTRUCTOR"){
+      //   router.push("/instructor/dashboard")//change to instructor dashboard
+      // }else{
+        router.push("/");
+      
 
-      router.push("/admin/dashboard")
     } catch (error: any) {
       toast.error(error?.response?.data?.message || "Login failed")
     } finally {

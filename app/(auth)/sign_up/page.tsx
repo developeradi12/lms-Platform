@@ -3,7 +3,6 @@
 import React, { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import axios from "axios"
 import { toast } from "sonner"
 import { z } from "zod"
 import { useForm } from "react-hook-form"
@@ -13,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
+import api from "@/lib/api"
 
 const signupSchema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -41,7 +41,7 @@ export default function SignupPage() {
       setLoading(true)
 
       // ✅ Step 1: Send OTP
-      await axios.post("/api/auth/send-otp", {
+      await api.post("/api/auth/send-otp", {
         email: values.email,
       })
 

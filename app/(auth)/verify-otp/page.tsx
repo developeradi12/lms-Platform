@@ -2,13 +2,13 @@
 
 import React, { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import axios from "axios"
 import { toast } from "sonner"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
+import api from "@/lib/api"
 
 export default function VerifyOtpPage() {
   const router = useRouter()
@@ -46,8 +46,8 @@ export default function VerifyOtpPage() {
     try {
       setLoading(true)
 
-      // ✅ Step 2: Verify OTP + Create Account
-      const res = await axios.post("/api/auth/verify-otp", {
+      //  Step 2: Verify OTP + Create Account
+      const res = await api.post("/api/auth/verify-otp", {
         name: parsed.name,
         email: parsed.email,
         password: parsed.password,
@@ -72,7 +72,7 @@ export default function VerifyOtpPage() {
     try {
       setResending(true)
 
-      await axios.post("/api/auth/send-otp", { email })
+      await api.post("/api/auth/send-otp", { email })
 
       toast.success("OTP resent successfully")
     } catch (error: any) {

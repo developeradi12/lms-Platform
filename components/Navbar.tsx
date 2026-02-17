@@ -1,51 +1,73 @@
 "use client"
-
-import axios from "axios"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import api from "@/lib/api"
 
 type UserType = {
-  firstName: string
-  lastName: string
+  name: string
+  email: string
   role: "ADMIN" | "instructor" | "STUDENT"
 }
 
 export const Navbar = () => {
+  const router = useRouter()
+  const [user, setUser] = useState<UserType | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  // get initials from full name
+  const getInitials = (name?: string) => {
+    if (!name) return "U"
+    const parts = name.trim().split(" ").filter(Boolean)
+    const first = parts[0]?.[0] || ""
+    const last = parts.length > 1 ? parts[parts.length - 1]?.[0] : ""
+    return (first + last).toUpperCase()
+  }
 
   const goToDashboard = () => {
     if (!user) return
-   
+
     if (user.role === "ADMIN") return router.push("/admin/dashboard")
     if (user.role === "instructor") return router.push("/instructor")
     return router.push("/dashboard") // student
   }
 
-  const router = useRouter()
-
-  const [user, setUser] = useState<UserType | null>(null)
-  const [loading, setLoading] = useState(true)
-
   const fetchMe = async () => {
     try {
       setLoading(true)
-      const res = await axios.get("/api/auth/refresh-token", { withCredentials: true, })
-      console.log("res", res);
-      setUser(res.data?.user || null)
+      const res = await api.get("/api/auth/me", { withCredentials: true, })
+
+      console.log("ME API OK:", res.data)
+      const me = res.data?.user || null
+      setUser(me)
+
+      //store in localStorage
+      if (me) {
+        localStorage.setItem("skill_user", JSON.stringify(me))
+        console.log("saved to localstorage:", me)
+      } else localStorage.removeItem("skill_user")
     } catch (err) {
+      console.log("ME API ERROR:", err)
       setUser(null)
+      localStorage.removeItem("skill_user")
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
+    const saved = localStorage.getItem("skill_user")
+    if (saved) {
+      try {
+        setUser(JSON.parse(saved))
+      } catch {
+        localStorage.removeItem("skill_user")
+      }
+    }
     fetchMe()
   }, [])
 
-  const initials =
-    (user?.firstName?.[0] || "").toUpperCase() +
-    (user?.lastName?.[0] || "").toUpperCase()
+  const initials = getInitials(user?.name)
 
   return (
     <nav className="mt-6 flex w-full items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-4 backdrop-blur">
@@ -74,7 +96,7 @@ export const Navbar = () => {
           </div>
 
           <span className="hidden sm:block text-sm font-medium text-white">
-            {user.firstName}
+            {user.name}
           </span>
         </button>
       )}

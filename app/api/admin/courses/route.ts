@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import connectDb from "@/lib/db"
-import Course from "@/models/Course"
+import {Course} from "@/models/Course"
 import path from "path";
 import fs from "fs/promises";
 import { cookies } from "next/headers";
@@ -77,7 +77,7 @@ export async function POST(req: Request) {
         await connectDb()
 
         const cookieStore = await cookies()
-        const token = cookieStore.get("refreshToken")?.value // 👈 apna cookie name check
+        const token = cookieStore.get("accessToken")?.value // 👈 apna cookie name check
 
         if (!token) {
             return NextResponse.json(
