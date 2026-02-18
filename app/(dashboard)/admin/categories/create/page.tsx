@@ -16,60 +16,38 @@ import {
 } from "@/components/ui/card"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import z from "zod"
 import { toast } from "sonner"
 import { Controller } from "react-hook-form";
 import ThumbnailUpload from "@/components/Upload"
 import api from "@/lib/api"
-
-const formSchema = z.object({
-  name: z.string().min(2, "Name is required"),
-  description: z.string().optional(),
-  image: z.instanceof(File, { message: "Thumbnail is required" }),
-  metaTitle: z.string().optional(),
-  metaDescription: z.string().optional(),
-
-})
-
-type FormValues = z.input<typeof formSchema>
+import {CreateCategoryFormValues, createCategoryFormSchema } from "@/schemas/categorySchema"
 
 export default function CreateCategoryPage() {
-
-
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<CreateCategoryFormValues>({
+    resolver: zodResolver(createCategoryFormSchema),
     defaultValues: {
       name: "",
       description: "",
-      image: undefined, //Empty string will fail validation in some cases that why write undefined
-
+      image: undefined,
       metaTitle: "",
       metaDescription: "",
     },
   })
-  // const name = form.watch("name");
-  // const description = form.watch("description");
-  // const metaTitle = form.watch("metaTitle");
-  // const metaDescription = form.watch("metaDescription");
 
-
-
-  const onSubmit = async (values: FormValues) => {
+  const onSubmit = async (values: CreateCategoryFormValues) => {
     console.log("FORM VALUES:", values)
     try {
       setLoading(true)
       console.log("values", values);
       const formData = new FormData();
-      Object.entries(values).forEach(([key, value]) => {
-        if (key === "image" && value) {
-          formData.append("image", value);
-        } else if (value !== undefined && value !== "") {
-          formData.append(key, String(value));
-        }
-      });
+      if(values.name) formData.append("name", values.name)
+      if (values.description) formData.append("description", values.description)
+      if (values.metaTitle) formData.append("metaTitle", values.metaTitle)
+      if (values.metaDescription) formData.append("metaDescription", values.metaDescription)
+      if (values.image) formData.append("image", values.image)
       await api.post(`/api/admin/categories`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
@@ -80,28 +58,11 @@ export default function CreateCategoryPage() {
       router.push("/admin/categories")
     } catch (error: any) {
       console.log(error.response?.data);
-      alert(error.response?.data?.message); 
       toast.error(error?.response?.data?.message || "Something went wrong")
     } finally {
       setLoading(false)
     }
   }
-
-  // useEffect(() => {
-
-  //   // Fill metaTitle ONLY if empty
-  //   if (!metaTitle && name) {
-  //     form.setValue("metaTitle", name);
-  //   }
-
-  //   // Fill metaDescription ONLY if empty
-  //   if (!metaDescription && description) {
-  //     form.setValue("metaDescription", description);
-  //   }
-
-  // }, [name, description]);
-
-
   return (
     <div className=" max-w-full space-y-6">
       {/* Header */}

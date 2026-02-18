@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import connectDb from "@/lib/db"
-import {Course} from "@/models/Course"
+import { Course } from "@/models/Course"
 import path from "path";
 import fs from "fs/promises";
 import { cookies } from "next/headers";
@@ -10,6 +10,12 @@ import mongoose from "mongoose"
 export async function GET() {
     try {
         await connectDb()
+        const cookieStore = await cookies()
+        const accessToken = cookieStore.get("accessToken")?.value
+
+        if (!accessToken) {
+            return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+        }
 
         const courses = await Course.aggregate([
             {

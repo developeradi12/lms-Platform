@@ -4,6 +4,7 @@ import connectDb from "@/lib/db"
 
 import Chapter from "@/models/Chapter"
 import Lesson from "@/models/Lesson"
+import { cookies } from "next/headers"
 
 type Params = {
     params: Promise<{ chapterId: string }>
@@ -13,6 +14,12 @@ type Params = {
 export async function PATCH(req: Request, { params }: Params) {
     try {
         await connectDb()
+        const cookieStore = await cookies()
+        const accessToken = cookieStore.get("accessToken")?.value
+
+        if (!accessToken) {
+            return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+        }
 
         const { chapterId } = await params
         console.log("jeee", chapterId);
@@ -21,7 +28,7 @@ export async function PATCH(req: Request, { params }: Params) {
         const { title, description } = body
 
         const updated = await Chapter.findOneAndUpdate(
-            {slug : chapterId},
+            { slug: chapterId },
             {
                 ...(title !== undefined ? { title: title.trim() } : {}),
                 ...(description !== undefined ? { description: description.trim() } : {}),
@@ -54,6 +61,12 @@ export async function PATCH(req: Request, { params }: Params) {
 export async function DELETE(req: Request, { params }: Params) {
     try {
         await connectDb()
+        const cookieStore = await cookies()
+        const accessToken = cookieStore.get("accessToken")?.value
+
+        if (!accessToken) {
+            return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+        }
 
         const { chapterId } = await params
 
@@ -86,6 +99,12 @@ export async function DELETE(req: Request, { params }: Params) {
 export async function GET(req: Request, { params }: Params) {
     try {
         await connectDb()
+        const cookieStore = await cookies()
+        const accessToken = cookieStore.get("accessToken")?.value
+
+        if (!accessToken) {
+            return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+        }
 
         const { chapterId } = await params
         console.log("chapterid", chapterId);

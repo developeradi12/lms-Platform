@@ -1,17 +1,48 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import connectDb from "@/lib/db"
 import Category from "@/models/Category"
-import path from "path";
-import fs from "fs/promises";
+// import path from "path";
+// import fs from "fs/promises";
+import { createCategoryApiSchema } from "@/schemas/categorySchema"
+import { savePublicUpload } from "@/lib/uploadFile"
+import { cookies } from "next/headers"
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     await connectDb()
+    const cookieStore = await cookies()
+    const accessToken = cookieStore.get("accessToken")?.value
 
-    const categories = await Category.find().sort({ createdAt: -1 })
+    if (!accessToken) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+    }
 
+    const page = Number(req.nextUrl.searchParams.get("page") || "1")
+    const limit = Number(req.nextUrl.searchParams.get("limit") || "10")
+    const search = req.nextUrl.searchParams.get("search") || ""
+    const sort = req.nextUrl.searchParams.get("sort") || "latest"
+    const filter = search
+      ? {
+        $or: [
+          { name: { $regex: search, $options: "i" } },
+          { slug: { $regex: search, $options: "i" } },
+          { metaTitle: { $regex: search, $options: "i" } },
+        ],
+      }
+      : {}
+    let sortQuery: any = { createdAt: -1 }
+
+    if (sort === "oldest") sortQuery = { createdAt: 1 }
+    if (sort === "name_asc") sortQuery = { name: 1 }
+    if (sort === "name_desc") sortQuery = { name: -1 }
+    const total = await Category.countDocuments(filter)
+
+    const categories = await Category.find(filter)
+      .sort(sortQuery)
+      .skip((page - 1) * limit)
+      .limit(limit)
     return NextResponse.json(
-      { success: true, categories },
+      { success: true, categories, total, page, limit },
       { status: 200 }
     )
   } catch (error) {
@@ -26,66 +57,48 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     await connectDb()
+    const cookieStore = await cookies()
+    const accessToken = cookieStore.get("accessToken")?.value
+
+    if (!accessToken) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+    }
 
     const formData = await req.formData();
-    const name = formData.get("name") as string;
-    const description = formData.get("description") as string;
-    const metaTitle = formData.get("metaTitle") as string;
-    const metaDescription = formData.get("metaDescription") as string;
-    const imageFile = formData.get("image") as File
+    const validatedText = createCategoryApiSchema
+      .omit({ image: true })
+      .parse({
+        name: (formData.get("name") as string)?.trim(),
+        description: (formData.get("description") as string) || "",
+        metaTitle: (formData.get("metaTitle") as string) || "",
+        metaDescription: (formData.get("metaDescription") as string) || "",
+      })
 
-    if (!name?.trim()) {
-      return NextResponse.json(
-        { success: false, message: "Category name is required" },
-        { status: 400 }
-      )
+    let imageUrl = ""
+    const imageFile = formData.get("image") as File | null
+
+    if (imageFile) {
+      imageUrl = await savePublicUpload(imageFile, {
+        folder: "categories",
+        maxSize: 2 * 1024 * 1024,
+      })
     }
-    // const exists = await Category.findOne({ name })
-
-    // if (exists) {
-    //   return NextResponse.json(
-    //     { message: "Category exists" },
-    //     { status: 409 }
-    //   )
-    // }
-
-    let imageUrl = "";
-    if (imageFile.size > 2 * 1024 * 1024) {
+    const exists = await Category.findOne({ name: validatedText.name })
+    if (exists) {
       return NextResponse.json(
-        { success: false, message: "Image must be under 2MB" },
-        { status: 400 }
+        { success: false, message: "Category already exists" },
+        { status: 409 }
       );
     }
-    console.log("Thumbnail received:", imageFile.name);
-    if (imageFile) {
-      const bytes = await imageFile.arrayBuffer()
-      const buffer = Buffer.from(bytes)
-
-      const fileName = `${Date.now()}-${imageFile.name}`
-
-      const uploadDir = path.join(
-        process.cwd(),
-        "public/uploads"
-      )
-
-      await fs.mkdir(uploadDir, { recursive: true })
-
-      await fs.writeFile(
-        path.join(uploadDir, fileName),
-        buffer
-      )
-
-      imageUrl = `/uploads/${fileName}`
-    }
-
-
-    const category = await Category.create({
-      name,
-      description,
-      metaTitle,
-      metaDescription,
+    const finalPayload = createCategoryApiSchema.parse({
+      ...validatedText,
       image: imageUrl,
     })
+
+    // 4️ Create category
+    const category = await Category.create({
+      ...finalPayload,
+    });
 
     return NextResponse.json(
       { success: true, message: "Category created successfully", data: category },
@@ -93,15 +106,19 @@ export async function POST(req: Request) {
     )
   } catch (error: any) {
     console.error("CREATE CATEGORY ERROR:", error)
-    console.log("course create error", error)
+    // Validation errors from schema
+    if (error?.name === "ZodError") {
+      return NextResponse.json(
+        { success: false, message: error.errors },
+        { status: 400 }
+      );
+    }
+    // Duplicate key error
     if (error?.code === 11000) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Course already exists"
-        },
-        { status: 409 } // conflict
-      )
+        { success: false, message: "Category already exists" },
+        { status: 409 }
+      );
     }
     return NextResponse.json(
       { success: false, message: error.message || "Internal Server Error" },

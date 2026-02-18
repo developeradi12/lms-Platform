@@ -1,6 +1,7 @@
 import connectDb from "@/lib/db"
 import Lesson from "@/models/Lesson"
 import mongoose from "mongoose"
+import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 
 type Params = {
@@ -11,10 +12,17 @@ type Params = {
 export async function GET(req: Request, { params }: Params) {
   try {
     await connectDb()
-    const  {lessonId}  = await params
+    const cookieStore = await cookies()
+    const accessToken = cookieStore.get("accessToken")?.value
+
+    if (!accessToken) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+    }
+
+    const { lessonId } = await params
     console.log("GET lessonId", lessonId)
-    const lesson = await Lesson.findOne({slug:lessonId}).lean()
-      console.log("found lesson", lesson)
+    const lesson = await Lesson.findOne({ slug: lessonId }).lean()
+    console.log("found lesson", lesson)
     if (!lesson) {
       return NextResponse.json(
         { success: false, message: "Lesson not found" },
@@ -35,11 +43,17 @@ export async function GET(req: Request, { params }: Params) {
 export async function PATCH(req: Request, { params }: Params) {
   try {
     await connectDb()
+    const cookieStore = await cookies()
+    const accessToken = cookieStore.get("accessToken")?.value
+
+    if (!accessToken) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+    }
 
     const { lessonId } = await params
-   
+
     const body = await req.json()
-    const { title,description, videoUrl, duration, order, isFreePreview } = body
+    const { title, description, videoUrl, duration, order, isFreePreview } = body
 
     const updated = await Lesson.findOneAndUpdate(
       { slug: lessonId },
@@ -80,6 +94,12 @@ export async function PATCH(req: Request, { params }: Params) {
 export async function DELETE(req: Request, { params }: Params) {
   try {
     await connectDb()
+    const cookieStore = await cookies()
+    const accessToken = cookieStore.get("accessToken")?.value
+
+    if (!accessToken) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+    }
 
     const { lessonId } = await params
 

@@ -1,9 +1,10 @@
 import { generateUniqueSlug } from "@/lib/generateUniqueSlug";
+import { CourseDocument } from "@/schemas/courseSchema";
 import mongoose, { Schema, Types, model, models } from "mongoose"
 import slugify from "slugify";
 
 
-const CourseSchema = new Schema(
+const CourseSchema = new Schema<CourseDocument>(
   {
     title: {
       type: String,
@@ -28,20 +29,20 @@ const CourseSchema = new Schema(
       default: ""
     },
     instructor: {
-      type: Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
       index: true,
     },
     category: {
-      type: Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Category",
       required: true,
       index: true,
     },
     chapters: [
       {
-        type: Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: "Chapter"
       }
     ],
@@ -111,4 +112,4 @@ CourseSchema.pre("save", async function (next) {
 });
 
 export const Course =
-  models.Course || model("Course", CourseSchema)
+  models.Course || model<CourseDocument>("Course", CourseSchema)

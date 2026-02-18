@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server"
 import connectDb from "@/lib/db"
-import {Course} from "@/models/Course"
+import { Course } from "@/models/Course"
 import "@/models/User"
 import "@/models/Chapter"
 import "@/models/Lesson"
 import path from "path"
 import fs from "fs/promises";
+import { cookies } from "next/headers"
 
 export async function GET(
   req: Request,
@@ -13,11 +14,18 @@ export async function GET(
 ) {
   try {
     await connectDb()
+    const cookieStore = await cookies()
+    const accessToken = cookieStore.get("accessToken")?.value
+
+    if (!accessToken) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+    }
+
     const { slug } = await params;
     console.log(slug);
 
     const course = await Course.findOne({ slug })
-     .populate("category", "name")
+      .populate("category", "name")
       .populate("instructor", "name")
       .populate({
         path: "chapters",
@@ -27,7 +35,7 @@ export async function GET(
           select: "title duration",
         },
       })
-        .lean();
+      .lean();
 
     if (!course) {
       return NextResponse.json(
@@ -53,6 +61,13 @@ export async function PUT(
 ) {
   try {
     await connectDb()
+    const cookieStore = await cookies()
+    const accessToken = cookieStore.get("accessToken")?.value
+
+    if (!accessToken) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+    }
+
     const { slug } = await params;
     // console.log("course slug", slug);
     const course = await Course.findOne({ slug })
@@ -108,7 +123,7 @@ export async function PUT(
 
       thumbnailPath = `/uploads/${fileName}`
     }
-    const updated = await Course.findOneAndUpdate({slug},
+    const updated = await Course.findOneAndUpdate({ slug },
       {
         title,
         description,
@@ -136,7 +151,7 @@ export async function PUT(
       { status: 200 }
     )
   } catch (error: any) {
-    console.log("erorr",error);
+    console.log("erorr", error);
     return NextResponse.json(
       { success: false, message: error.message },
       { status: 500 }
@@ -150,6 +165,13 @@ export async function DELETE(
 ) {
   try {
     await connectDb()
+    const cookieStore = await cookies()
+    const accessToken = cookieStore.get("accessToken")?.value
+
+    if (!accessToken) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+    }
+
     const slug = await params;
     console.log("delete id", slug);
     const deleted = await Course.findOneAndDelete(slug)

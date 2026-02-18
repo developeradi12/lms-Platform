@@ -1,7 +1,6 @@
 "use client"
 import React, { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation";
-import { z } from "zod"
 import { Controller, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Input } from "@/components/ui/input"
@@ -12,37 +11,30 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
 import api from "@/lib/api";
-
-const formSchema = z.object({
-    name: z.string().min(2, "Name is required"),
-    description: z.string().optional(),
-    image:z.string(),
-    metaTitle: z.string().min(2, "Meta title is required"),
-    metaDescription: z.string().optional(),
-    slug: z.string().optional()
-})
-
-type FormValues = z.input<typeof formSchema>
+import { UpdateCategoryform, updateCategorySchema } from "@/schemas/categorySchema";
+import ThumbnailUpload from "@/components/Upload";
 
 export default function EditCategoryPage() {
-
-    const params = useParams()
     const router = useRouter()
-    const { slug } = useParams()
+    const params = useParams<{ slug: string }>()
+    const slug = params.slug
     console.log("check", slug);
     const [loading, setLoading] = useState(true)
-    const [saving, setSaving] = useState(false);
 
-    const form = useForm<FormValues>({
-        resolver: zodResolver(formSchema),
+    const form = useForm<UpdateCategoryform>({
+        resolver: zodResolver(updateCategorySchema),
         defaultValues: {
             name: "",
             description: "",
-            image: undefined,
+            imageUrl: "",
+            imageFile: undefined,
             metaTitle: "",
             metaDescription: "",
-        },
+        }
     })
+
+    const isSubmitting = form.formState.isSubmitting
+    const imageUrl = form.watch("imageUrl")
 
     const fetchCategory = async () => {
         try {
@@ -53,22 +45,20 @@ export default function EditCategoryPage() {
 
             if (!category) {
                 toast.error("Category not found")
-                router.push("/admin/categories")
+                router.replace("/admin/categories")
                 return
             }
-
-
             form.reset({
-                name: category.name || "",
-                description: category.description || "",
-                image: category.image || "",
-                metaTitle: category.metaTitle || "",
-                metaDescription: category.metaDescription || "",
-                slug: category.slug
+                name: category.name ?? "",
+                description: category.description ?? "",
+                imageUrl: category.image ?? "",
+                imageFile: undefined, // always empty initially
+                metaTitle: category.metaTitle ?? "",
+                metaDescription: category.metaDescription ?? "",
             })
         } catch (error: any) {
             toast.error(error?.response?.data?.message || "Failed to load category")
-            // router.push("/admin/categories")
+            router.push("/admin/categories")
         } finally {
             setLoading(false)
         }
@@ -78,36 +68,30 @@ export default function EditCategoryPage() {
         if (slug) fetchCategory();
     }, [slug]);
 
-    const onSubmit = async (values: FormValues) => {
-        console.log("SUBMIT TRIGGERED")
+    const onSubmit = async (values: UpdateCategoryform) => {
+        // console.log("SUBMIT TRIGGERED")
         console.log("FORM VALUES:", values)
         try {
-            setSaving(true);
-            console.log("values", values);
+           setLoading(true)
             const formData = new FormData();
-            Object.entries(values).forEach(([key, value]) => {
-                if (key === "image" && value) {
-                    formData.append("image", value);
-                } else {
-                    formData.append(key, String(value));
-                }
-            });
-
+            if (values.name) formData.append("name", values.name)
+            if (values.description) formData.append("description", values.description)
+            if (values.metaTitle) formData.append("metaTitle", values.metaTitle)
+            if (values.metaDescription) formData.append("metaDescription", values.metaDescription)
+            if (values.imageFile) formData.append("image", values.imageFile)
             await api.put(`/api/admin/categories/${slug}`, formData, {
                 headers: {
                     "Content-Type": "multipart/form-data",
                 },
             });
-
             toast.success("Category updated successfully")
             router.push("/admin/categories")
         } catch (error: any) {
             toast.error(error?.response?.data?.message || "Update failed")
         } finally {
-            setSaving(false)
+            setLoading(false)
         }
     }
-
 
     if (loading) {
         return (
@@ -157,33 +141,45 @@ export default function EditCategoryPage() {
                                 {...form.register("description")}
                             />
                         </div>
-
+                        {/* OLD IMAGE PREVIEW */}
                         <div className="space-y-2">
-                            <Label>Image</Label>
-                            <Input
-                                className="rounded-xl"
-                                placeholder="Paste image url..."
-                                {...form.register("image")}
-                            />
+                            <Label>Current Image</Label>
 
-                            {form.watch("image")?.trim() ? (
-                                <div className="mt-3 overflow-hidden rounded-2xl border">
+                            {imageUrl ? (
+                                <div className="overflow-hidden rounded-2xl border">
                                     <img
-                                        src={form.watch("image")}
-                                        alt="image preview"
+                                        src={imageUrl}
+                                        alt="Current category"
                                         className="w-full h-52 object-cover"
                                     />
                                 </div>
-                            ) : null}
+                            ) : (
+                                <p className="text-sm text-muted-foreground">
+                                    No image uploaded yet.
+                                </p>
+                            )}
                         </div>
 
+                        {/* NEW IMAGE UPLOAD */}
                         <div className="space-y-2">
-                            <Label>Slug</Label>
-                            <Input
-                                className="rounded-xl"
-                                placeholder="slug"
-                                {...form.register("slug")}
+                            <Label>Upload New Image (Optional)</Label>
+
+                            <Controller
+                                control={form.control}
+                                name="imageFile"
+                                render={({ field }) => (
+                                    <ThumbnailUpload
+                                        value={field.value}
+                                        onChange={(file) => field.onChange(file)}
+                                    />
+                                )}
                             />
+
+                            {form.formState.errors.imageFile && (
+                                <p className="text-sm text-red-500">
+                                    {form.formState.errors.imageFile.message as string}
+                                </p>
+                            )}
                         </div>
 
                         <div className="space-y-2">
@@ -213,14 +209,17 @@ export default function EditCategoryPage() {
                             <Button
                                 type="button"
                                 variant="outline"
-                                className="rounded-xl"
+                                className="rounded-xl cursor-pointer"
+                                disabled={isSubmitting}
                                 onClick={() => router.push("/admin/categories")}
                             >
                                 Cancel
                             </Button>
 
-                            <Button type="submit" className="rounded-xl cursor-pointer" disabled={saving}>
-                                {saving ? "Saving..." : "Update Category"}
+                            <Button type="submit"
+                                className="rounded-xl cursor-pointer"
+                                disabled={isSubmitting}>
+                                {isSubmitting ? "Saving..." : "Update Category"}
                             </Button>
                         </div>
                     </form>

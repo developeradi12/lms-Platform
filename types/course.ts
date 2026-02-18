@@ -1,28 +1,7 @@
-export interface Lesson {
-  _id: string
-  title: string
-  duration?: string
-}
+import { Category } from "./category"
+import { Chapter } from "./chapter"
+import { Instructor } from "./instructor"
 
-export interface Chapter {
-  _id: string
-  title: string
-  description?: string
-  lessons: Lesson[]
-}
-
-export interface Category {
-  _id: string
-  name: string
-  slug: string
-}
-
-export interface Instructor {
-  _id: string
-  name?: string
-  firstName?: string
-  lastName?: string
-}
 
 export interface CourseSerialized {
   _id: string

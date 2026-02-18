@@ -1,8 +1,8 @@
 import connectDb from "@/lib/db"
 import Lesson from "@/models/Lesson"
 import Chapter from "@/models/Chapter"
-import mongoose from "mongoose"
 import { NextResponse } from "next/server"
+import { cookies } from "next/headers"
 
 type Params = {
   params: Promise<{ chapterId: string }>
@@ -11,10 +11,16 @@ type Params = {
 export async function GET(req: Request, { params }: Params) {
   try {
     await connectDb()
+    const cookieStore = await cookies()
+    const accessToken = cookieStore.get("accessToken")?.value
+
+    if (!accessToken) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+    }
 
     const { chapterId } = await params
     console.log("GET chapterId", chapterId)
-    const chapter = await Chapter.findOne({slug:chapterId});
+    const chapter = await Chapter.findOne({ slug: chapterId });
     console.log("found chapter", chapter)
     const lessons = await Lesson.find({ chapter: chapter?._id })
       .sort({ order: 1, createdAt: 1 })
@@ -31,13 +37,19 @@ export async function GET(req: Request, { params }: Params) {
 export async function POST(req: Request, { params }: Params) {
   try {
     await connectDb()
+    const cookieStore = await cookies()
+    const accessToken = cookieStore.get("accessToken")?.value
+
+    if (!accessToken) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+    }
 
     // Get chapter slug from params 
     const { chapterId } = await params
-    
-    const chapter = await Chapter.findOne({slug:chapterId});
-    console.log("chapter",chapter);
-       
+
+    const chapter = await Chapter.findOne({ slug: chapterId });
+    console.log("chapter", chapter);
+
     // Check if chapter exists
     // const chapter = await Chapter.findOne({ slug: chapterSlug }).select("_id").lean()
     if (!chapter) {
@@ -59,8 +71,8 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     // Get last lesson order
-   const LastLesson = await Lesson.findOne({ chapter: chapter._id }).sort({ order: -1 })
-    console.log("LastLesson",LastLesson);
+    const LastLesson = await Lesson.findOne({ chapter: chapter._id }).sort({ order: -1 })
+    console.log("LastLesson", LastLesson);
 
     const finalOrder = (LastLesson?.order ?? 0) + 1
 

@@ -7,7 +7,8 @@ import "@/models/User"
 import SearchInput from "./_components/SearchInput"
 import Filters from "./_components/filters"
 import Category from "@/models/Category"
-import { Category as CategoryType, CourseSerialized } from "@/types/course"
+import {  CourseSerialized } from "@/types/course"
+import {Category as CategoryType} from "@/schemas/categorySchema"
 
 interface Props {
   searchParams: Promise<{

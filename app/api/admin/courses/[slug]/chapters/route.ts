@@ -1,7 +1,8 @@
 import connectDb from "@/lib/db";
 import Chapter from "@/models/Chapter";
-import {Course} from "@/models/Course";
+import { Course } from "@/models/Course";
 import Lesson from "@/models/Lesson";
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 //get 
@@ -9,6 +10,13 @@ export async function GET(req: Request,
     { params }: { params: Promise<{ slug: string }> }) {
     try {
         await connectDb();
+        const cookieStore = await cookies()
+        const accessToken = cookieStore.get("accessToken")?.value
+
+        if (!accessToken) {
+            return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+        }
+
         const { slug } = await params
         console.log("testing", slug);
 
@@ -32,7 +40,7 @@ export async function GET(req: Request,
         )
         return NextResponse.json({ success: true, chapters: chaptersWithCount })
     } catch (error: any) {
-        console.log("get error",error);
+        console.log("get error", error);
         return NextResponse.json(
             { success: false, message: error.message || "Failed to fetch chapters" },
             { status: 500 }
@@ -46,6 +54,12 @@ export async function GET(req: Request,
 export async function POST(req: Request, { params }: { params: Promise<{ slug: string }> }) {
     try {
         await connectDb()
+        const cookieStore = await cookies()
+        const accessToken = cookieStore.get("accessToken")?.value
+
+        if (!accessToken) {
+            return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+        }
 
         const { slug } = await params
         const body = await req.json()
@@ -76,8 +90,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
             description: description,
             order: finalOrder,
         })
-        await Course.findOneAndUpdate({ slug }, 
-             { $push: { chapters: chapter._id } }
+        await Course.findOneAndUpdate({ slug },
+            { $push: { chapters: chapter._id } }
         );
 
         return NextResponse.json(
