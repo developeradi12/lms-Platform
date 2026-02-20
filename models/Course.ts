@@ -34,12 +34,12 @@ const CourseSchema = new Schema<CourseDocument>(
       required: true,
       index: true,
     },
-    category: {
+    categories: [{
       type: Schema.Types.ObjectId,
       ref: "Category",
       required: true,
       index: true,
-    },
+    }],
     chapters: [
       {
         type: Schema.Types.ObjectId,
@@ -80,6 +80,21 @@ const CourseSchema = new Schema<CourseDocument>(
       type: Number,
       default: 0,
     },
+
+    prerequisites: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
+
+    tags: [
+      {
+        type: String,
+        trim: true,
+        lowercase: true,
+      },
+    ],
 
     metaTitle: {
       type: String,

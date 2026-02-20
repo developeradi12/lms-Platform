@@ -23,26 +23,58 @@ async function verifyToken(token: string) {
   }
 }
 
+/**
+ * ✅ MIDDLEWARE (Correct Export)
+ */
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // access token middleware me
   const accessToken = request.cookies.get("accessToken")?.value
+  const refreshToken = request.cookies.get("refreshToken")?.value
 
   let user: null | { id: any; email: any; role: string } = null
 
-  // 1) If token exists → verify
+  // 1️⃣ Verify access token
   if (accessToken) {
     try {
       user = await verifyToken(accessToken)
     } catch (err) {
-      // invalid/expired token
+      // Access token invalid → try refresh
+      if (refreshToken) {
+        try {
+          const refreshRes = await fetch(
+            `${request.nextUrl.origin}/api/auth/refresh`,
+            {
+              method: "POST",
+              headers: {
+                Cookie: `refreshToken=${refreshToken}`,
+                "Content-Type": "application/json",
+              },
+            }
+          )
+
+          if (refreshRes.ok) {
+            const response = NextResponse.next()
+
+            const setCookieHeaders = refreshRes.headers.getSetCookie()
+
+            setCookieHeaders.forEach((cookie) => {
+              response.headers.append("Set-Cookie", cookie)
+            })
+
+            return response
+          }
+        } catch (refreshErr) {
+          console.error("Silent refresh failed")
+        }
+      }
+
       user = null
     }
   }
 
   /**
-   * 2) PROTECT ADMIN ROUTES
+   * 2️⃣ PROTECT ADMIN ROUTES
    */
   if (pathname.startsWith(ADMIN_ROUTE)) {
     if (!user) {
@@ -55,7 +87,7 @@ export async function proxy(request: NextRequest) {
   }
 
   /**
-   * 3) PROTECT USER DASHBOARD ROUTES
+   * 3️⃣ PROTECT USER DASHBOARD
    */
   if (pathname.startsWith(USER_ROUTE)) {
     if (!user) {
@@ -64,11 +96,13 @@ export async function proxy(request: NextRequest) {
   }
 
   /**
-   * 4) Prevent logged-in users visiting login/signup
+   * 4️⃣ Prevent logged-in users from login/signup
    */
   if (user && AUTH_ROUTES.includes(pathname)) {
     if (user.role === "ADMIN") {
-      return NextResponse.redirect(new URL("/admin/dashboard", request.url))
+      return NextResponse.redirect(
+        new URL("/admin/dashboard", request.url)
+      )
     }
 
     return NextResponse.redirect(new URL("/dashboard", request.url))
@@ -78,18 +112,17 @@ export async function proxy(request: NextRequest) {
 }
 
 /**
- * ⚡ MATCHER (PERFORMANCE)
+ * ⚡ MATCHER
  */
 export const config = {
   matcher: [
     "/admin/:path*",
     "/dashboard/:path*",
+    "/courses/:courseId/learn",
     "/login",
     "/sign_up",
   ],
 }
-
-
 // Proxy      →  Are you logged in?
 // API        →  Who are you?
 // DB         →  Are you allowed?

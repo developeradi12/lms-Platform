@@ -1,7 +1,3 @@
-import { cookies } from "next/headers"
-import jwt from "jsonwebtoken"
-
-
 import {
   SidebarInset,
   SidebarProvider,
@@ -9,14 +5,11 @@ import {
 
 import { SiteHeader } from "../_components/site-header";
 import { AppSidebar } from "../_components/app-sidebar";
-
 export default async function Layout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-
-
   return (
     <SidebarProvider
       style={

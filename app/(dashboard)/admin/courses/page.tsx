@@ -148,7 +148,6 @@ export default function AdminCoursesPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="px-4 py-3">Title</TableHead>
-                    <TableHead className="px-4 py-3">Category</TableHead>
                     <TableHead className="px-4 py-3">Price</TableHead>
                     <TableHead className="px-4 py-3">Status</TableHead>
 
@@ -179,12 +178,6 @@ export default function AdminCoursesPage() {
                       <TableRow key={course._id} className="">
                         <TableCell className="py-3 px-4 align-middle">
                           {course.title.trim().slice(0, 20)}
-                        </TableCell>
-
-                        <TableCell className="py-3 px-4 align-middle">
-                          <Badge variant="secondary" className="rounded-xl">
-                            {course.category?.name || "No Category"}
-                          </Badge>
                         </TableCell>
 
                         <TableCell className="py-3 px-4 align-middle">

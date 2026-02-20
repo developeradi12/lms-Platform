@@ -32,3 +32,19 @@ youtube.com/watch?v=VIDEOID
 youtube.com/embed/VIDEOID
 
 Aur agar URL invalid ho ya match na ho → null.*/
+
+export function toYoutubeEmbed(url: string) {
+  // supports youtu.be + watch?v= + shorts
+  const u = url.trim()
+
+  if (u.includes("embed/")) return u
+
+  const short = u.match(/youtu\.be\/([a-zA-Z0-9_-]+)/)?.[1]
+  const watch = u.match(/[?&]v=([a-zA-Z0-9_-]+)/)?.[1]
+  const shorts = u.match(/shorts\/([a-zA-Z0-9_-]+)/)?.[1]
+
+  const id = short || watch || shorts
+  if (!id) return null
+
+  return `https://www.youtube.com/embed/${id}?autoplay=1&rel=0`
+}

@@ -25,14 +25,14 @@ export async function GET(
     console.log(slug);
 
     const course = await Course.findOne({ slug })
-      .populate("category", "name")
+      .populate("categories", "name")
       .populate("instructor", "name")
       .populate({
         path: "chapters",
         select: "title lessons",
         populate: {
           path: "lessons",
-          select: "title duration",
+          select: "title duration videoUrl ",
         },
       })
       .lean();

@@ -1,6 +1,7 @@
-export interface Instructor {
+export type Instructor = {
   _id: string
-  name?: string
   firstName?: string
   lastName?: string
+  name?: string
+  email?: string
 }

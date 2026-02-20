@@ -13,56 +13,26 @@ import {
 } from "@/components/ui/accordion"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Lock, PlayCircle } from "lucide-react"
+import { toYoutubeEmbed } from "@/lib/getYoutube"
+import { useRouter } from "next/navigation"
+import type { Course } from "@/types/course"
+import { Lesson } from "@/types/lesson"
+import { toast } from "sonner"
+import api from "@/lib/api"
 
-type Lesson = {
-  _id: string
-  title: string
-  duration?: number
-  isFreePreview?: boolean
-  videoUrl?: string
+interface Props {
+  course: Course
+  isEnrolled?: boolean
 }
 
-type Chapter = {
-  _id: string
-  title: string
-  description?: string
-  lessons: Lesson[]
-}
 
-type Course = {
-  title: string
-  slug: string
-  description: string
-  thumbnail: string
-  price: number
-  level: "BEGINNER" | "INTERMEDIATE" | "ADVANCED"
-  createdAt: string
-  instructor?: { firstName?: string; lastName?: string; name?: string }
-  category?: { name: string }
-  chapters: Chapter[]
-}
-
-function toYoutubeEmbed(url: string) {
-  // supports youtu.be + watch?v= + shorts
-  const u = url.trim()
-
-  if (u.includes("embed/")) return u
-
-  const short = u.match(/youtu\.be\/([a-zA-Z0-9_-]+)/)?.[1]
-  const watch = u.match(/[?&]v=([a-zA-Z0-9_-]+)/)?.[1]
-  const shorts = u.match(/shorts\/([a-zA-Z0-9_-]+)/)?.[1]
-
-  const id = short || watch || shorts
-  if (!id) return null
-
-  return `https://www.youtube.com/embed/${id}?autoplay=1&rel=0`
-}
-
-export default function CourseDetailsClient({ course }: { course: Course }) {
+export default function CourseDetailsClient({
+  course,
+  isEnrolled = false
+}: Props) {
   const [open, setOpen] = useState(false)
   const [activeLesson, setActiveLesson] = useState<Lesson | null>(null)
-
-  const isEnrolled = false // TODO real
+  const router = useRouter();
   const isFree = course.price === 0
 
   const instructorName =
@@ -95,6 +65,37 @@ export default function CourseDetailsClient({ course }: { course: Course }) {
     setOpen(true)
   }
 
+  async function handleEnroll() {
+    try {
+      const res = await api.get("/api/auth/me")
+      const user = res.data?.user;
+    if (!user) {
+      router.push(`/login?redirect=/courses/${course.slug}`);
+      return;
+    }
+
+      if (isFree) {
+        const enrollRes = await api.post("/api/user/enroll", { slug: course.slug })
+
+        if (enrollRes.status === 201 || enrollRes.status === 200) {
+         toast.success(enrollRes.data.message || "Enrolled successfully!");
+         setTimeout(() => router.refresh(), 500);
+          router.refresh() // This triggers the Server Component to re-run
+        } else {
+          toast.error("Enrollment failed at the API level.")
+        }
+        return
+      }
+
+      toast.info("Paid course detected. Redirecting to checkout.")
+      router.push(`/checkout/${course.slug}`)
+
+    } catch (error: any) {
+      console.error(error)
+      toast.error(`Error: ${error.response?.data?.message || error.message}`)
+    }
+  }
+
   return (
     <>
       {/* Modal */}
@@ -110,7 +111,7 @@ export default function CourseDetailsClient({ course }: { course: Course }) {
             {embedUrl ? (
               <iframe
                 src={embedUrl}
-                title={activeLesson?.title || "Lesson video"}
+                title={activeLesson?.title}
                 allow="autoplay; encrypted-media"
                 allowFullScreen
                 className="absolute inset-0 h-full w-full"
@@ -122,20 +123,23 @@ export default function CourseDetailsClient({ course }: { course: Course }) {
             )}
           </div>
         </DialogContent>
-      </Dialog>
-
-      {/* Page UI */}
+      </Dialog >
+      {/* Page Layout */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left */}
+          {/* LEFT SIDE */}
           <div className="lg:col-span-2 space-y-6">
             <div>
               <div className="flex flex-wrap gap-2 mb-3">
-                {course.category?.name && (
-                  <Badge variant="outline" className="rounded-xl">
-                    {course.category.name}
+                {course.categories && course.categories.map((cat) => (
+                  <Badge key={cat.slug} variant="outline" className="rounded-xl">
+                    {cat.name}
                   </Badge>
-                )}
+                ))}
+
+                <Badge variant="secondary" className="rounded-xl">
+                  {course.level}
+                </Badge>
 
                 {isFree ? (
                   <Badge className="rounded-xl">Free Course</Badge>
@@ -146,96 +150,76 @@ export default function CourseDetailsClient({ course }: { course: Course }) {
                 )}
               </div>
 
-              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
+              <h1 className="text-3xl sm:text-4xl font-bold">
                 {course.title}
               </h1>
 
-              <p className="text-muted-foreground mt-3 text-sm sm:text-base">
+              <p className="text-muted-foreground mt-3">
                 {course.description}
               </p>
 
               <p className="mt-4 text-sm text-muted-foreground">
-                Created by <span className="font-medium">{instructorName}</span>
+                Created by{" "}
+                <span className="font-medium">{instructorName}</span>
               </p>
+
+
             </div>
 
+            {/* Course Content */}
             <Card className="rounded-2xl">
               <CardHeader>
-                <CardTitle className="text-xl">Course Content</CardTitle>
+                <CardTitle>Course Content</CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  {totalChapters} chapters • {totalLessons} lessons • {totalDuration} min
+                  {totalChapters} chapters • {totalLessons} lessons •{" "}
+                  {totalDuration} min
                 </p>
               </CardHeader>
 
               <CardContent>
-                <Accordion type="single" collapsible className="w-full">
+                <Accordion type="single" collapsible>
                   {course.chapters.map((chapter, chapterIndex) => (
-                    <AccordionItem key={chapter._id} value={chapter._id} className="border-b">
-                      <AccordionTrigger className="text-left">
-                        <div className="flex flex-col">
-                          <span className="font-semibold">
-                            {chapterIndex + 1}. {chapter.title}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {chapter.lessons?.length || 0} lessons
-                          </span>
-                        </div>
+                    <AccordionItem key={chapter._id} value={chapter._id}>
+                      <AccordionTrigger>
+                        {chapterIndex + 1}. {chapter.title}
                       </AccordionTrigger>
 
                       <AccordionContent>
-                        <div className="space-y-2 pt-2">
-                          {chapter.lessons.map((lesson, lessonIndex) => {
-                            const canAccess =
-                              isFree || isEnrolled || lesson.isFreePreview
+                        {chapter.lessons.map((lesson, lessonIndex) => {
+                          const canAccess =
+                            isFree || isEnrolled || lesson.isFreePreview
 
-                            return (
-                              <div
-                                key={lesson._id}
-                                className="flex items-center justify-between gap-4 rounded-xl border p-3"
-                              >
-                                <div className="flex items-start gap-3">
-                                  <div className="text-sm font-medium text-muted-foreground pt-0.5">
-                                    {chapterIndex + 1}.{lessonIndex + 1}
-                                  </div>
-
-                                  <div>
-                                    <div className="flex items-center gap-2">
-                                      <p className="font-medium">{lesson.title}</p>
-
-                                      {lesson.isFreePreview && !isFree && !isEnrolled && (
-                                        <Badge variant="outline" className="rounded-xl text-xs">
-                                          Preview
-                                        </Badge>
-                                      )}
-                                    </div>
-
-                                    <p className="text-xs text-muted-foreground">
-                                      {lesson.duration
-                                        ? `Duration: ${lesson.duration} min`
-                                        : "Lesson"}
-                                    </p>
-                                  </div>
-                                </div>
-
-                                {canAccess ? (
-                                  <Button
-                                    size="sm"
-                                    className="rounded-xl gap-2"
-                                    onClick={() => handleWatch(lesson)}
-                                  >
-                                    <PlayCircle className="h-4 w-4" />
-                                    Watch
-                                  </Button>
-                                ) : (
-                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                    <Lock className="h-4 w-4" />
-                                    Locked
-                                  </div>
-                                )}
+                          return (
+                            <div
+                              key={lesson._id}
+                              className="flex items-center justify-between border rounded-xl p-3 mb-2"
+                            >
+                              <div>
+                                <p className="font-medium">
+                                  {chapterIndex + 1}.{lessonIndex + 1}{" "}
+                                  {lesson.title}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {lesson.duration
+                                    ? `${lesson.duration} min`
+                                    : ""}
+                                </p>
                               </div>
-                            )
-                          })}
-                        </div>
+
+                              {canAccess ? (
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleWatch(lesson)}
+                                >
+                                  <PlayCircle className="h-4 w-4 mr-1" />
+                                  Watch
+                                </Button>
+                              ) : (
+                                <Lock className="h-4 w-4 text-muted-foreground" />
+                              )}
+                            </div>
+                          )
+                        })}
                       </AccordionContent>
                     </AccordionItem>
                   ))}
@@ -244,58 +228,73 @@ export default function CourseDetailsClient({ course }: { course: Course }) {
             </Card>
           </div>
 
-          {/* Right */}
+          {/* RIGHT SIDE */}
           <div className="lg:col-span-1">
-            <div className="lg:sticky lg:top-24">
-              <Card className="rounded-2xl overflow-hidden">
-                <div className="relative w-full h-52 bg-muted">
-                  <Image
-                    src={course.thumbnail || "/placeholder.png"}
-                    alt={course.title}
-                    fill
-                    className="object-cover"
-                  />
+            <Card className="rounded-2xl overflow-hidden">
+              <div className="relative w-full h-52">
+                <Image
+                  src={course.thumbnail || "/placeholder.png"}
+                  alt={course.title}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+
+              <CardContent className="p-6 space-y-4">
+                <div className="flex justify-between">
+                  <span>Price</span>
+                  <span className="text-2xl font-bold">
+                    {isFree ? "Free" : `₹${course.price}`}
+                  </span>
                 </div>
 
-                <CardContent className="p-6 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm text-muted-foreground">Price</p>
-                    <p className="text-2xl font-bold">
-                      {isFree ? "Free" : `₹${course.price}`}
-                    </p>
-                  </div>
+                <Button
+                  className="w-full rounded-xl"
+                  onClick={() => {
+                    if (isEnrolled) {
+                      router.push(`/courses/${course.slug}/learn`)
+                    } else {
+                      handleEnroll()
+                    }
+                  }}
+                >
+                  {isEnrolled
+                    ? "Continue Watching"
+                    : isFree
+                      ? "Enroll Now"
+                      : "Pay & Enroll"}
+                </Button>
+              </CardContent>
+            </Card>
 
-                  <div className="grid grid-cols-3 gap-2 text-center">
-                    <div className="rounded-xl border p-3">
-                      <p className="text-xs text-muted-foreground">Chapters</p>
-                      <p className="font-semibold">{totalChapters}</p>
-                    </div>
-                    <div className="rounded-xl border p-3">
-                      <p className="text-xs text-muted-foreground">Lessons</p>
-                      <p className="font-semibold">{totalLessons}</p>
-                    </div>
-                    <div className="rounded-xl border p-3">
-                      <p className="text-xs text-muted-foreground">Minutes</p>
-                      <p className="font-semibold">{totalDuration}</p>
-                    </div>
-                  </div>
-
-                  {isFree || isEnrolled ? (
-                    <Button className="w-full rounded-xl">Start Learning</Button>
-                  ) : (
-                    <Button className="w-full rounded-xl">Pay & Enroll</Button>
-                  )}
-
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    {isFree
-                      ? "This course is free. You can access all lessons."
-                      : "This is a paid course. You can still watch preview lessons for free."}
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
           </div>
         </div>
+
+        <div className="">
+          {/* Prerequisites */}
+          {course.prerequisites?.length > 0 && (
+            <div className="mt-6">
+              <h3 className="font-semibold mb-2">Prerequisites</h3>
+              <ul className="list-disc list-inside text-sm text-muted-foreground">
+                {course.prerequisites.map((item, index) => (
+                  <li key={index}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Tags */}
+          {course.tags?.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-6">
+              {course.tags.map((tag, index) => (
+                <Badge key={index} variant="outline" className="rounded-xl">
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+          )}
+        </div>
+
       </div>
     </>
   )

@@ -21,17 +21,14 @@ export const CourseCreateSchema = z.object({
         !file || ["image/png", "image/jpeg", "image/webp"].includes(file.type),
       "Only PNG/JPG/WEBP allowed"
     ),
-  category: z.string().min(1, "Category is required"), // ObjectId as string
-
   chapters: z.array(z.string()).optional().default([]), // ObjectId[] as string[]
-
   price: z.number().min(0).optional().default(0),
-
   duration: z.number().min(0).optional().default(0), // minutes
-
   level: z.enum(["BEGINNER", "INTERMEDIATE", "ADVANCED"]).optional().default("BEGINNER"),
-
-  isPublished: z.boolean().optional().default(false),
+  categories: z.array(z.string()).min(1, "Primary category is required"),
+  tags: z.array(z.string()),
+  prerequisites: z.array(z.string()),
+  isPublished: z.boolean().default(false),
 })
 
 
@@ -93,12 +90,12 @@ export const CourseUpdateSchema = z.object({
 
 export interface CourseDocument {
   title: string
-  slug?: string
+  slug: string
   description: string
-  thumbnail?: string
+  thumbnail: string
 
   instructor: Types.ObjectId
-  category: Types.ObjectId
+  categories: Types.ObjectId[]
   chapters: Types.ObjectId[]
 
   price: number
@@ -109,7 +106,8 @@ export interface CourseDocument {
   averageRating: number
   totalReviews: number
   totalEnrollments: number
-
+  prerequisites: string[]
+  tags: string[]
   metaTitle?: string
   metaDescription?: string
 
