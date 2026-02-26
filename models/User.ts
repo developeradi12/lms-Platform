@@ -1,5 +1,6 @@
 import mongoose, { models, Schema, Types } from "mongoose"
 import bcrypt from "bcryptjs"
+
 const UserSchema = new Schema(
   {
     name: {
@@ -22,8 +23,8 @@ const UserSchema = new Schema(
 
     password: {
       type: String,
-      required: true, // ✅ signup + login ke liye required
-      select: true,  // ✅ security (find me password by default nahi aayega)
+      required: true,
+      select: true, 
     },
 
     role: {
@@ -32,46 +33,58 @@ const UserSchema = new Schema(
       default: "STUDENT",
     },
 
-    // ✅ refresh token store (for refresh token flow)
-    refreshToken: {
+    avatar: {
       type: String,
       default: "",
     },
 
-    enrolledCourses: [
+    bio: {
+      type: String,
+      default: "",
+    },
+
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+
+    status: {
+      type: String,
+      enum: ["ACTIVE", "SUSPENDED", "BLOCKED"],
+      default: "ACTIVE",
+    },
+
+    refreshToken: {
+      type: String,
+      default: "",
+      select: false,
+    },
+
+    wishlist: [
       {
         type: Types.ObjectId,
-        ref: "Course"
-      }
+        ref: "Course",
+      },
     ],
 
-
-    wishlist:
-      [
-        {
-          type: Types.ObjectId,
-          ref: "wishlist"
-        }
-      ],
-
-    review: [
+    orders: [
       {
         type: Types.ObjectId,
-        ref: "review"
-      }
+        ref: "Order",
+      },
     ],
 
-    order: [
+    reviews: [
       {
         type: Types.ObjectId,
-        ref: "Order"
-      }
+        ref: "Review",
+      },
     ],
   },
   { timestamps: true }
 )
 
-// ✅ Hash password before saving
+// 🔐 Hash password before saving
 UserSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next()
   this.password = await bcrypt.hash(this.password, 10)

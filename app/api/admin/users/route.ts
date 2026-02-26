@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import User from "@/models/User";
+import { cookies } from "next/headers";
 // import { authMiddleware, adminMiddleware } from "@/lib/middleware"; 
 // adjust path if needed
 
@@ -11,7 +12,12 @@ export async function GET(req: NextRequest) {
     // // 🔥 Protect route
     // const authUser = await authMiddleware(req);
     // adminMiddleware(authUser);
+    const cookieStore = await cookies();
+    const accessToken = cookieStore.get("accessToken")?.value
 
+    if (!accessToken) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+    }
     // Query params
     const { searchParams } = new URL(req.url);
 

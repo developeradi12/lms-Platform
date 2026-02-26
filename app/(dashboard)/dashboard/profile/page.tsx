@@ -60,7 +60,7 @@ export default function ProfilePage() {
   const [savingProfile, setSavingProfile] = useState(false)
   const [savingPassword, setSavingPassword] = useState(false)
 
- 
+
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
@@ -156,36 +156,28 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-            Profile
-          </h1>
-          <p className="text-sm sm:text-base text-muted-foreground mt-1">
-            Manage your account settings and personal information.
-          </p>
-        </div>
+    <div className="flex flex-col gap-6 p-4 md:p-6">
 
-        <Badge className="w-fit rounded-xl px-3 py-1 text-sm">
-          {user.role}
-        </Badge>
+      {/* HEADER */}
+      <div>
+        <h2 className="text-2xl font-bold font-[family-name:var(--font-space-grotesk)]">
+          My Profile
+        </h2>
+        <p className="text-muted-foreground">
+          Manage your personal information and security settings
+        </p>
       </div>
 
-      {/* Grid */}
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Left */}
-        <Card className="rounded-2xl lg:col-span-1">
-          <CardHeader>
-            <CardTitle className="text-lg">Your Account</CardTitle>
-          </CardHeader>
 
-          <CardContent className="flex flex-col items-center text-center gap-4">
-            <div className="relative">
-              <Avatar className="h-24 w-24 rounded-2xl">
+        {/* LEFT PANEL */}
+        <Card className="border-border bg-card hover:shadow-md transition-all rounded-2xl">
+          <CardContent className="flex flex-col items-center text-center p-6 gap-5">
+
+            <div className="relative group">
+              <Avatar className="h-28 w-28 rounded-2xl border shadow-sm">
                 <AvatarImage src={user.avatar || ""} />
-                <AvatarFallback className="rounded-2xl text-xl">
+                <AvatarFallback className="rounded-2xl text-2xl font-semibold">
                   {user.name?.slice(0, 1).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
@@ -193,7 +185,8 @@ export default function ProfilePage() {
               <Button
                 size="icon"
                 variant="secondary"
-                className="absolute -bottom-2 -right-2 rounded-xl"
+                className="absolute -bottom-2 -right-2 rounded-xl shadow-md 
+              opacity-0 group-hover:opacity-100 transition"
                 onClick={() => toast.info("Avatar upload coming soon 😄")}
               >
                 <Camera className="h-4 w-4" />
@@ -205,10 +198,12 @@ export default function ProfilePage() {
               <p className="text-sm text-muted-foreground">{user.email}</p>
             </div>
 
-            <Separator />
+            <Badge variant="secondary" className="rounded-full px-3">
+              {user.role}
+            </Badge>
 
-            <div className="w-full space-y-2 text-left">
-              <p className="text-sm text-muted-foreground">Joined</p>
+            <div className="w-full pt-4 border-t text-left space-y-1">
+              <p className="text-xs text-muted-foreground">Member Since</p>
               <p className="font-medium">
                 {new Date(user.createdAt).toLocaleDateString()}
               </p>
@@ -216,21 +211,24 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Right */}
+        {/* RIGHT SIDE */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Profile Form */}
-          <Card className="rounded-2xl">
+
+          {/* PERSONAL INFO */}
+          <Card className="border-border bg-card hover:shadow-md transition-all rounded-2xl">
             <CardHeader>
-              <CardTitle className="text-lg">Personal Information</CardTitle>
+              <CardTitle className="text-lg font-semibold">
+                Personal Information
+              </CardTitle>
             </CardHeader>
 
             <CardContent>
               <Form {...profileForm}>
                 <form
                   onSubmit={profileForm.handleSubmit(onSubmitProfile)}
-                  className="space-y-4"
+                  className="space-y-5"
                 >
-                  <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid gap-5 sm:grid-cols-2">
                     <FormField
                       control={profileForm.control}
                       name="name"
@@ -239,7 +237,7 @@ export default function ProfilePage() {
                           <FormLabel>Name</FormLabel>
                           <FormControl>
                             <Input
-                              className="rounded-xl"
+                              className="rounded-xl focus-visible:ring-1"
                               placeholder="Enter your name"
                               {...field}
                             />
@@ -252,34 +250,16 @@ export default function ProfilePage() {
                     <div className="space-y-2">
                       <Label>Email</Label>
                       <Input
-                        className="rounded-xl"
+                        className="rounded-xl bg-muted"
                         value={user.email}
                         disabled
                       />
                     </div>
                   </div>
 
-                  {/* <FormField
-                    control={profileForm.control}
-                    name="phone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Phone</FormLabel>
-                        <FormControl>
-                          <Input
-                            className="rounded-xl"
-                            placeholder="Enter phone number"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  /> */}
-
                   <Button
                     type="submit"
-                    className="rounded-xl"
+                    className="rounded-xl px-6"
                     disabled={savingProfile}
                   >
                     {savingProfile ? (
@@ -296,17 +276,19 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
-          {/* Password Form */}
-          <Card className="rounded-2xl">
+          {/* PASSWORD */}
+          <Card className="border-border bg-card hover:shadow-md transition-all rounded-2xl">
             <CardHeader>
-              <CardTitle className="text-lg">Change Password</CardTitle>
+              <CardTitle className="text-lg font-semibold">
+                Security Settings
+              </CardTitle>
             </CardHeader>
 
             <CardContent>
               <Form {...passwordForm}>
                 <form
                   onSubmit={passwordForm.handleSubmit(onSubmitPassword)}
-                  className="space-y-4"
+                  className="space-y-5"
                 >
                   <FormField
                     control={passwordForm.control}
@@ -327,7 +309,7 @@ export default function ProfilePage() {
                     )}
                   />
 
-                  <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid gap-5 sm:grid-cols-2">
                     <FormField
                       control={passwordForm.control}
                       name="newPassword"
@@ -370,7 +352,7 @@ export default function ProfilePage() {
                   <Button
                     type="submit"
                     variant="outline"
-                    className="rounded-xl"
+                    className="rounded-xl px-6"
                     disabled={savingPassword}
                   >
                     {savingPassword ? (
@@ -386,6 +368,7 @@ export default function ProfilePage() {
               </Form>
             </CardContent>
           </Card>
+
         </div>
       </div>
     </div>

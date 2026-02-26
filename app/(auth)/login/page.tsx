@@ -66,18 +66,15 @@ export default function Login() {
       setLoading(true)
 
       const res = await api.post("/api/auth/login", values)
-      // console.log("login_response", res);
       toast.success(res.data?.message || "Login successful")
-      // if (res.data?.user?.role === "ADMIN") {
-      //   router.push("/admin/dashboard")
-      // }else if(res.data?.user?.role === "INSTRUCTOR"){
-      //   router.push("/instructor/dashboard")//change to instructor dashboard
-      // }else{
-        router.push("/");
-      
-
+      if (res.data?.user?.role === "ADMIN") {
+        router.push("/admin/dashboard")
+      } else if (res.data?.user?.role === "STUDENT") {
+        router.push("/dashboard")
+      }
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Login failed")
+      toast.error( "Login failed")
+      router.push("/");
     } finally {
       setLoading(false)
     }

@@ -1,130 +1,235 @@
 "use client"
 
-import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-
 import {
-  IconInnerShadowTop,
-  IconBook,
-  IconCategory,
-  IconUsers,
-  IconHeart,
-  IconCreditCard,
-  IconUserCircle,
-  IconChartBar,
-} from "@tabler/icons-react"
-
-import { NavDocuments } from "./nav-documents"
-import { NavMain } from "./nav-main"
-import { NavSecondary } from "./nav-secondary"
-import { NavUser } from "./nav-user"
+  BookOpen,
+  GraduationCap,
+  LayoutDashboard,
+  Library,
+  Users,
+  Heart,
+  UserCircle,
+  BarChart3,
+  CreditCard,
+} from "lucide-react"
 
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarSeparator,
 } from "@/components/ui/sidebar"
 
-type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
-  role: "admin" | "user"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+
+interface AppSidebarProps {
+  role?: "ADMIN" | "STUDENT"
+  userName?: string
 }
 
-const sidebarData = {
-  admin: [
-    {
-      title: "Courses",
-      url: "/admin/courses",
-      icon: IconBook,
-    },
-    {
-      title: "Category",
-      url: "/admin/categories",
-      icon: IconCategory,
-    },
-    {
-      title: "Users",
-      url: "/admin/users",
-      icon: IconUsers,
-    },
+const navConfig = {
+  ADMIN: [
+    { title: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+    { title: "Manage Courses", href: "/admin/courses", icon: Library },
+    { title: "Categories", href: "/admin/categories", icon: BookOpen },
+    { title: "Users", href: "/admin/users", icon: Users },
   ],
-
-  user: [
-    {
-      title: "Progress",
-      url: "/dashboard",
-      icon: IconChartBar,
-    },
-    {
-      title: "Enrolled Courses",
-      url: "/dashboard/courses",
-      icon: IconBook,
-    },
-    {
-      title: "Payments",
-      url: "/dashboard/payments",
-      icon: IconCreditCard,
-    },
-    {
-      title: "Wishlist",
-      url: "/dashboard/wishlist",
-      icon: IconHeart,
-    },
-    {
-      title: "Profile",
-      url: "/dashboard/profile",
-      icon: IconUserCircle,
-    },
+  STUDENT: [
+    { title: "Dashboard", href: "/dashboard", icon: BarChart3 },
+    { title: "My Learning", href: "/dashboard/my-learning", icon: BookOpen },
   ],
 }
 
-export function AppSidebar({ role, ...props }: AppSidebarProps) {
+const accountNav = {
+  ADMIN: [
+    // { title: "Wishlist", href: "/dashboard/wishlist", icon: Heart },
+    // { title: "Payments", href: "/dashboard/payments", icon: CreditCard },
+    { title: "Profile", href: "/dashboard/profile", icon: UserCircle },
+  ],
+  STUDENT: [
+    { title: "Wishlist", href: "/dashboard/wishlist", icon: Heart },
+    { title: "Payments", href: "/dashboard/payments", icon: CreditCard },
+    { title: "Profile", href: "/dashboard/profile", icon: UserCircle },
+  ]
+}
+
+export function AppSidebar({
+  role = "STUDENT",
+  userName = "User",
+}: AppSidebarProps) {
+
   const pathname = usePathname()
-
-  const data = {
-    user: {
-      name: "shadcn",
-      email: "m@example.com",
-      avatar: "/avatars/shadcn.jpg",
-    },
-    navMain: sidebarData[role],
-    documents: [],
-    navSecondary: [],
+  const mainNav = navConfig[role] ?? navConfig.STUDENT
+  const secNav = accountNav[role]??accountNav.STUDENT
+  const isActive = (href: string) => {
+    if (href === "/dashboard" || href === "/admin") {
+      return pathname === href
+    }
+    return pathname.startsWith(href)
   }
 
   return (
-    <Sidebar collapsible="offcanvas" {...props}>
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              className="data-[slot=sidebar-menu-button]:!p-1.5"
-            >
-              <Link href={role === "admin" ? "/admin" : "/dashboard"}>
-                <IconInnerShadowTop className="!size-5" />
-                <span className="text-base font-semibold">
-                  LMS PLATFORM
-                </span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+    <Sidebar
+      variant="sidebar"
+      collapsible="icon"
+      className="
+        transition-[width]
+        duration-300
+        ease-in-out
+      "
+    >
+
+      {/* HEADER */}
+      <SidebarHeader className="p-4">
+        <Link
+          href={role === "ADMIN" ? "/admin" : "/dashboard"}
+          className="flex items-center gap-2"
+        >
+          <div className="flex size-8 items-center justify-center rounded-lg bg-sidebar-primary">
+            <GraduationCap className="size-5 text-sidebar-primary-foreground transition-transform duration-200 group-data-[collapsible=icon]:scale-110" />
+          </div>
+
+          <span
+            className="
+              text-lg font-bold tracking-tight text-sidebar-foreground
+              transition-all duration-200
+              group-data-[collapsible=icon]:opacity-0
+              group-data-[collapsible=icon]:w-0
+              group-data-[collapsible=icon]:overflow-hidden
+            "
+          >
+            LearnHub
+          </span>
+        </Link>
       </SidebarHeader>
 
+      <SidebarSeparator />
+
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavDocuments items={data.documents} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+
+        {/* MAIN NAV */}
+        <SidebarGroup>
+          <SidebarGroupLabel
+            className="
+              capitalize
+              transition-all duration-200
+              group-data-[collapsible=icon]:opacity-0
+            "
+          >
+            {role.toLowerCase()} Menu
+          </SidebarGroupLabel>
+
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {mainNav.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActive(item.href)}
+                    tooltip={item.title}
+                    className="transition-all duration-200"
+                  >
+                    <Link href={item.href}>
+                      <item.icon className="size-4 shrink-0" />
+                      <span
+                        className="
+                          transition-all duration-200
+                          group-data-[collapsible=icon]:opacity-0
+                          group-data-[collapsible=icon]:w-0
+                          group-data-[collapsible=icon]:overflow-hidden
+                        "
+                      >
+                        {item.title}
+                      </span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* ACCOUNT NAV */}
+        <SidebarGroup>
+          <SidebarGroupLabel
+            className="
+              transition-all duration-200
+              group-data-[collapsible=icon]:opacity-0
+            "
+          >
+            Account
+          </SidebarGroupLabel>
+
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {secNav.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname.startsWith(item.href)}
+                    tooltip={item.title}
+                    className="transition-all duration-200"
+                  >
+                    <Link href={item.href}>
+                      <item.icon className="size-4 shrink-0" />
+                      <span
+                        className="
+                          transition-all duration-200
+                          group-data-[collapsible=icon]:opacity-0
+                          group-data-[collapsible=icon]:w-0
+                          group-data-[collapsible=icon]:overflow-hidden
+                        "
+                      >
+                        {item.title}
+                      </span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
       </SidebarContent>
 
-      <SidebarFooter>
-        <NavUser user={data.user} />
+      {/* FOOTER */}
+      <SidebarFooter className="p-4">
+        <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center transition-all duration-200">
+
+          <Avatar className="size-8 shrink-0">
+            <AvatarImage src="/images/avatar.jpg" />
+            <AvatarFallback className="text-xs">
+              {userName?.charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+
+          <div
+            className="
+              flex flex-col overflow-hidden
+              transition-all duration-200
+              group-data-[collapsible=icon]:opacity-0
+              group-data-[collapsible=icon]:w-0
+            "
+          >
+            <span className="text-sm font-medium truncate">
+              {userName}
+            </span>
+            <span className="text-xs text-muted-foreground capitalize">
+              {role.toLowerCase()}
+            </span>
+          </div>
+
+        </div>
       </SidebarFooter>
+
     </Sidebar>
   )
 }

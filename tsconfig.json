@@ -29,6 +29,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-, "models/Category.js"  ],
+, "models/Category.js", "app/(auth)/layout"  ],
   "exclude": ["node_modules"]
 }

@@ -1,54 +1,49 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import { Toaster } from "sonner";
+import type { Metadata, Viewport } from "next"
+import { Inter, Space_Grotesk } from "next/font/google"
+import "./globals.css"
+import { Toaster } from "sonner"
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const _inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
+const _spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+  variable: "--font-space-grotesk",
+})
 
 export const metadata: Metadata = {
-  title: "Your LMS",
-  description: "Learn smarter. Build faster.",
-};
+  title: "LearnHub - Learning Management System",
+  description:
+    "A modern learning management system to discover, enroll, and track your courses.",
+}
 
-export default function RootLayout({
+export const viewport: Viewport = {
+  themeColor: "#1a1a2e",
+}
+
+export default async function RootLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
+
   return (
-    <html lang="en" className="scroll-smooth">
-      <body 
-        className={`
-          ${geistSans.variable} 
-          ${geistMono.variable} 
-          antialiased 
-          min-h-screen 
-          flex flex-col
-          bg-fixed 
-          bg-gradient-to-br from-slate-50 via-white to-indigo-50/30
-          selection:bg-indigo-100 selection:text-indigo-900
-        `}
+    <html lang="en">
+      <body
+        className={`${_inter.variable} ${_spaceGrotesk.variable} font-sans antialiased`}
       >
-        {/* The flex-1 ensures main takes up all available space */}
-        <main className="flex-1">
-          {children}
-        </main>
-        
-        <Toaster 
-          position="top-right" 
-          richColors 
-          closeButton 
+        <div className="min-h-screen flex flex-col">
+          {/* Page Content */}
+          <main className="flex-1">
+            {children}
+          </main>
+        </div>
+
+        <Toaster
+          position="top-right"
+          richColors
+          closeButton
           theme="light"
         />
       </body>
     </html>
-  );
+  )
 }

@@ -5,7 +5,7 @@ import axios from "axios"
  * - withCredentials: VERY IMPORTANT for cookies (accessToken / refreshToken)
  */
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "",
+  // baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000",
   withCredentials: true,
 })
 /**
@@ -52,6 +52,7 @@ api.interceptors.response.use(
     * otherwise infinite loop can happen.
     */
     if (original?.url?.includes("/api/auth/refresh")) {
+      window.location.href = "/login"
       return Promise.reject(err)
     }
 
@@ -103,6 +104,7 @@ api.interceptors.response.use(
          * - user should be logged out now
          */
         processQueue(e)
+        window.location.href = "/login"
         return Promise.reject(e)
       } finally {
         /**

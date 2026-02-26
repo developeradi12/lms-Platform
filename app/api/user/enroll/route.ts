@@ -1,83 +1,148 @@
-import connectDb from "@/lib/db";
-import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
-import jwt from "jsonwebtoken"
-import User from "@/models/User";
-import { Course } from "@/models/Course";
-import Enrollment from "@/models/Enrollment";
+import connectDb from "@/lib/db"
+import { NextResponse } from "next/server"
+import { getAuthUser } from "@/lib/getAuthUser"
+import { Course } from "@/models/Course"
+import Enrollment from "@/models/Enrollment"
+import Progress from "@/models/Progress"
 
 export async function POST(req: Request) {
     try {
-        await connectDb();
-        const token = (await cookies()).get("accessToken")?.value
+        await connectDb()
 
-        if (!token) {
+        // 🔐 Get logged in user
+        const user = await getAuthUser()
+        if (!user) {
             return NextResponse.json(
-                { message: "Unauthorized" },
+                { success: false, message: "Unauthorized" },
                 { status: 401 }
             )
         }
 
-        const decoded: any = jwt.verify(
-            token,
-            process.env.ACCESS_TOKEN_SECRET!
-        )
-        
-        const user = await User.findById(decoded.userId)
-        if (!user) {
-            return NextResponse.json(
-                { message: "User not found" },
-                { status: 404 }
-            )
-        }
         const { slug } = await req.json()
 
-        const course = await Course.findOne({ slug })
+        if (!slug) {
+            return NextResponse.json(
+                { success: false, message: "Course slug required" },
+                { status: 400 }
+            )
+        }
 
+        // 🔍 Find course
+        const course = await Course.findOne({ slug })
         if (!course) {
             return NextResponse.json(
-                { message: "Course not found" },
+                { success: false, message: "Course not found" },
                 { status: 404 }
             )
         }
+
+        // 💰 Free course check
         if (course.price > 0) {
             return NextResponse.json(
-                { message: "Payment required" },
+                { success: false, message: "Payment required" },
                 { status: 403 }
             )
         }
 
+        // 🚫 Check if already enrolled
         const existing = await Enrollment.findOne({
             user: user._id,
             course: course._id,
         })
 
         if (existing) {
-            return NextResponse.json(
-                { message: "Already enrolled" },
-                { status: 200 }
-            )
+            return NextResponse.json({
+                success: true,
+                message: "Already enrolled",
+            })
         }
 
-        const enrollment = await Enrollment.create({
+        // ✅ Create enrollment
+        await Enrollment.create({
             user: user._id,
             course: course._id,
+            progress: 0,
             enrolledAt: new Date(),
         })
 
-       const  check =   await User.findByIdAndUpdate(user._id, {
-            $addToSet: { enrolledCourses: course._id }// Prevents duplicates automatically
-        })
-        console.log("check",check);
-
         return NextResponse.json(
-            { message: "Enrollment successful" },
+            { success: true, message: "Enrollment successful" },
             { status: 201 }
         )
     } catch (error) {
         console.error("ENROLL ERROR:", error)
         return NextResponse.json(
-            { message: "Internal Server Error" },
+            { success: false, message: "Internal Server Error" },
+            { status: 500 }
+        )
+    }
+}
+
+export async function GET() {
+    try {
+        await connectDb()
+
+        const user = await getAuthUser()
+        if (!user) {
+            return NextResponse.json(
+                { success: false, message: "Unauthorized" },
+                { status: 401 }
+            )
+        }
+
+        const enrollments = await Enrollment.find({
+            user: user._id,
+            status: "ACTIVE",
+        })
+            .populate({
+                path: "course",
+                populate: [
+                    {
+                        path: "categories",
+                        select: "name",
+                    },
+                    {
+                        path: "instructor",
+                        select: "name",
+                    },
+                ],
+            })
+            .lean()
+
+
+        // 2️⃣ Get progress records
+        const progressRecords = await Progress.find({
+            user: user._id
+        }).lean()
+
+        // 3️⃣ Format data with real progress calculation
+
+        const formatted = enrollments.map((enrollment: any) => {
+            return {
+                _id: enrollment.course._id,
+                title: enrollment.course.title,
+                slug: enrollment.course.slug,
+                categories: enrollment.course.categories,
+                level: enrollment.course.level,
+                instructor:
+                    enrollment.course.instructor?.name || "Unknown",
+                totalLessons: enrollment.course.totalLessons,
+                totalDuration: enrollment.course.duration,
+                thumbnail: enrollment.course.thumbnail,
+
+                // ✅ Directly use enrollment progress
+                progress: enrollment.progress || 0,
+            }
+        })
+
+        return NextResponse.json({
+            success: true,
+            data: formatted,
+        })
+    } catch (error) {
+        console.error(error)
+        return NextResponse.json(
+            { success: false, message: "Server error" },
             { status: 500 }
         )
     }

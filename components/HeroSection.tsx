@@ -104,9 +104,11 @@ export function HeroSection() {
           >
             <div className="w-full overflow-hidden rounded-2xl border border-white/10">
               <img
-                src=""
-                alt="Landing preview"
-                className="aspect-[16/9] h-auto w-full object-cover"
+                src="/Gemini_Generated_Image_da5cv7da5cv7da5c.png"
+                alt="LMS Landing Preview"
+                width={1920}
+                height={1080}
+                className="aspect-video object-fill"
                 loading="lazy"
               />
             </div>

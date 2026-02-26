@@ -6,10 +6,10 @@ import "@/models/Lesson"
 import "@/models/Category"
 import CourseDetailsClient from "../_components/CourseDetailsClient"
 import { cookies } from "next/headers"
-import User from "@/models/User"
 import jwt from "jsonwebtoken"
 import { Course as CourseType } from "@/types/course"
-
+import Enrollment from "@/models/Enrollment"
+import "@/models/User"
 
 type PopulatedCourse = CourseType & {
   categories: Array<{ name: string; slug: string }>;
@@ -56,13 +56,13 @@ export default async function CourseDetailsPage({
         token,
         process.env.ACCESS_TOKEN_SECRET!
       )
-      console.log(decoded);
-      const user = await User.findById(decoded.userId).select("enrolledCourses")
-      if (user && user.enrolledCourses) {
-        isEnrolled = user.enrolledCourses.some(
-          (id: any) => id.toString() === courseDoc._id.toString())
-        console.log("Is Enrolled Result:", isEnrolled);
-      }
+      const enrollment = await Enrollment.findOne({
+        user: decoded.userId,
+        course: courseDoc._id,
+        status: "ACTIVE",
+      }).lean()
+      isEnrolled = !!enrollment
+
     } catch (error) {
       console.log("JWT Error:", error)
     }

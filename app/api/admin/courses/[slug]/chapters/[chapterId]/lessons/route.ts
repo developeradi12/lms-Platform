@@ -3,6 +3,8 @@ import Lesson from "@/models/Lesson"
 import Chapter from "@/models/Chapter"
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
+import { Course } from "@/models/Course"
+import mongoose from "mongoose"
 
 type Params = {
   params: Promise<{ chapterId: string }>
@@ -77,22 +79,31 @@ export async function POST(req: Request, { params }: Params) {
     const finalOrder = (LastLesson?.order ?? 0) + 1
 
     // Create new lesson
-    const lesson = await Lesson.create({
-      title: title.trim(),
-      chapter: chapter._id,
-      description: description?.trim() || "",
-      videoUrl: videoUrl?.trim() || "",
-      duration: Number(duration) || 0,
-      order: finalOrder,
-      isFreePreview: Boolean(isFreePreview),
-    })
+    const lesson = await Lesson.create(
+      [
+        {
+          title: title.trim(),
+          chapter: chapter._id,
+          description: description?.trim() || "",
+          videoUrl: videoUrl?.trim() || "",
+          duration: Number(duration) || 0,
+          order: finalOrder,
+          isPreview: Boolean(isFreePreview),
+        },
+      ],
+    )
 
     // Push lesson into chapter's lessons array
     await Chapter.updateOne(
       { _id: chapter._id },
-      { $push: { lessons: lesson._id } }
+      { $push: { lessons: lesson[0]._id } },
     )
+    const course = await Course.findById(chapter.course)
 
+    if (course) {
+      course.totalLessons += 1
+      await course.save({})
+    }
     return NextResponse.json(
       { success: true, message: "Lesson created", lesson },
       { status: 201 }

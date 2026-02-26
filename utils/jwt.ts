@@ -1,23 +1,53 @@
-import { SignJWT } from "jose"
+import { SignJWT, jwtVerify } from "jose"
 
-const getSecret = (key: string) => new TextEncoder().encode(key)
+const accessSecret = new TextEncoder().encode(
+  process.env.ACCESS_TOKEN_SECRET!
+)
 
-export async function signAccessToken(payload: any) {
-  const secret = getSecret(process.env.ACCESS_TOKEN_SECRET!)
+const refreshSecret = new TextEncoder().encode(
+  process.env.REFRESH_TOKEN_SECRET!
+)
 
+export type JWTPayload = {
+  userId: string
+  email?: string
+  role: string
+}
+
+/**
+ * 🔐 Sign Access Token
+ */
+export async function signAccessToken(payload: JWTPayload) {
   return await new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime("15m")
-    .sign(secret)
+    .setExpirationTime("2m")
+    .sign(accessSecret)
 }
 
-export async function signRefreshToken(payload: any) {
-  const secret = getSecret(process.env.REFRESH_TOKEN_SECRET!)
-
+/**
+ * 🔐 Sign Refresh Token
+ */
+export async function signRefreshToken(payload: JWTPayload) {
   return await new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("7d")
-    .sign(secret)
+    .sign(refreshSecret)
+}
+
+/**
+ * 🔍 Verify Access Token
+ */
+export async function verifyAccessToken(token: string) {
+  const { payload } = await jwtVerify(token, accessSecret)
+  return payload as JWTPayload
+}
+
+/**
+ * 🔍 Verify Refresh Token
+ */
+export async function verifyRefreshToken(token: string) {
+  const { payload } = await jwtVerify(token, refreshSecret)
+  return payload as JWTPayload
 }

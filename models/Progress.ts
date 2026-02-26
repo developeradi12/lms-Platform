@@ -1,4 +1,4 @@
-import { Schema, Types } from "mongoose";
+import mongoose, { Schema, Types, model } from "mongoose";
 
 const ProgressSchema = new Schema(
   {
@@ -8,30 +8,37 @@ const ProgressSchema = new Schema(
       required: true,
     },
 
+    lesson: {
+      type: Types.ObjectId,
+      ref: "Lesson",
+      required: true,
+    },
+
     course: {
       type: Types.ObjectId,
       ref: "Course",
       required: true,
+       index: true,
     },
 
-    completedLessons: [
-      {
-        type: Types.ObjectId,
-        ref: "Lesson",
-      },
-    ],
-
-    lastWatchedLesson: {
-      type: Types.ObjectId,
-      ref: "Lesson",
-    },
-
-    percentage: {
+    watchedSeconds: {
       type: Number,
       default: 0,
     },
+
+    isCompleted: {
+      type: Boolean,
+      default: false,
+    },
+
+    completedAt: Date,
   },
   { timestamps: true }
 );
 
-ProgressSchema.index({ user: 1, course: 1 }, { unique: true });
+ProgressSchema.index(
+  { user: 1, lesson: 1 },
+  { unique: true }
+);
+export default mongoose.models.Progress ||
+  mongoose.model("Progress", ProgressSchema)

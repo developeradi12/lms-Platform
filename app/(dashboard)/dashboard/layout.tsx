@@ -5,14 +5,18 @@ import {
 
 import { SiteHeader } from "../_components/site-header";
 import { AppSidebar } from "../_components/app-sidebar";
+import { getAuthUser } from "@/lib/getAuthUser";
 
 export default async function Layout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-
-
+  type Role = "ADMIN" | "STUDENT"
+  const user = await getAuthUser()
+  console.log(user);
+  const name = user?.name
+  const userRole = (user?.role === "ADMIN" ? "ADMIN" : "STUDENT") as Role;
   return (
     <SidebarProvider
       style={
@@ -22,15 +26,9 @@ export default async function Layout({
         } as React.CSSProperties
       }
     >
-      <AppSidebar role="user" variant="inset" />
-      <SidebarInset className="bg-gray-50 min-h-screen" >
-       <SiteHeader role="student" />
-        <main className="w-full">
-          <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6">
-            {children}
-          </div>
-        </main>
-
+      <AppSidebar role={userRole} userName={name} />
+      <SidebarInset >
+        {children}
       </SidebarInset>
     </SidebarProvider>
   );

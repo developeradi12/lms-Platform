@@ -1,7 +1,38 @@
 import { generateUniqueSlug } from "@/lib/generateUniqueSlug";
-import { CourseDocument } from "@/schemas/courseSchema";
 import mongoose, { Schema, Types, model, models } from "mongoose"
 import slugify from "slugify";
+
+export interface CourseDocument {
+  title: string
+  slug: string
+  description: string
+  thumbnail: string
+
+  instructor: Types.ObjectId
+  categories: Types.ObjectId[]
+  chapters: Types.ObjectId[]
+
+  price: number
+  duration: number
+  level: "BEGINNER" | "INTERMEDIATE" | "ADVANCED"
+  isPublished: boolean
+
+  totalLessons: number
+  totalChapters: number
+
+  averageRating: number
+  totalReviews: number
+  totalEnrollments: number
+
+  prerequisites: string[]
+  tags: string[]
+
+  metaTitle?: string
+  metaDescription?: string
+
+  createdAt: Date
+  updatedAt: Date
+}
 
 
 const CourseSchema = new Schema<CourseDocument>(
@@ -40,6 +71,7 @@ const CourseSchema = new Schema<CourseDocument>(
       required: true,
       index: true,
     }],
+    totalLessons: { type: Number, default: 0 },
     chapters: [
       {
         type: Schema.Types.ObjectId,
@@ -127,4 +159,4 @@ CourseSchema.pre("save", async function (next) {
 });
 
 export const Course =
-  models.Course || model<CourseDocument>("Course", CourseSchema)
+ mongoose.models.Course ||  mongoose.model<CourseDocument>("Course", CourseSchema)

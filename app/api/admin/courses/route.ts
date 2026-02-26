@@ -2,81 +2,81 @@ import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import jwt from "jsonwebtoken"
 import mongoose from "mongoose"
-import connectDb  from "@/lib/db"
+import connectDb from "@/lib/db"
 import { Course } from "@/models/Course"
 import { savePublicUpload } from "@/lib/uploadFile"
 
 
 export async function GET() {
-    try {
-        await connectDb()
-        const cookieStore = await cookies()
-        const accessToken = cookieStore.get("accessToken")?.value
+  try {
+    await connectDb()
+    const cookieStore = await cookies()
+    const accessToken = cookieStore.get("accessToken")?.value
 
-        if (!accessToken) {
-            return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
-        }
-
-        const courses = await Course.aggregate([
-            {
-                //$lookup is used inside Aggregation Pipeline to perform a JOIN between two collections
-                //✅ Stage 1 — $lookup (Join Chapters) Joins chapters with each course.
-                $lookup: {
-                    from: "chapters",
-                    localField: "_id",
-                    foreignField: "course",
-                    as: "chapters",
-                },
-            },
-            {
-                $addFields: {
-                    chaptersCount: { $size: "$chapters" },
-                },
-            },
-            {
-                $lookup: {
-                    from: "categories",
-                    localField: "category",
-                    foreignField: "_id",
-                    as: "category",
-                },
-                //it return like that "category": [ { "name": "Web Dev" } ]
-            },
-            {
-                $unwind: {
-                    path: "$category",
-                    preserveNullAndEmptyArrays: true  //If a course has NO category: Without it → course disappears
-                }
-            }, // it convert this category: [{ name: "Web Dev"}]   
-            // into this category: { name: "Web Dev"}
-            {
-                $lookup: {
-                    from: "users",
-                    localField: "instructor",
-                    foreignField: "_id",
-                    as: "instructor",
-                },
-            },
-            { $unwind: { path: "$instructor", preserveNullAndEmptyArrays: true } },
-            { $sort: { createdAt: -1 } },
-        ])
-
-
-        // const courses = await Course.find().populate("category").populate("instructor").sort({ createdAt: -1 }).lean()
-        // const coursesWithCounts = await Promise.all(
-        //     courses.map(async (course) => {
-        //         const chaptersCount = await Chapter.countDocuments({ course: course._id })
-        //         return { ...course, chaptersCount }
-        //     })
-        // )    //issue it does N queries so total queries 1+n it too slow 
-        return NextResponse.json({ success: true, courses }, { status: 200 })
-    } catch (error) {
-      console.log(error);
-        return NextResponse.json(
-            { success: false, message: "Internal Server Error" },
-            { status: 500 }
-        )
+    if (!accessToken) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
+
+    const courses = await Course.aggregate([
+      {
+        //$lookup is used inside Aggregation Pipeline to perform a JOIN between two collections
+        //✅ Stage 1 — $lookup (Join Chapters) Joins chapters with each course.
+        $lookup: {
+          from: "chapters",
+          localField: "_id",
+          foreignField: "course",
+          as: "chapters",
+        },
+      },
+      {
+        $addFields: {
+          chaptersCount: { $size: "$chapters" },
+        },
+      },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "category",
+          foreignField: "_id",
+          as: "category",
+        },
+        //it return like that "category": [ { "name": "Web Dev" } ]
+      },
+      {
+        $unwind: {
+          path: "$category",
+          preserveNullAndEmptyArrays: true  //If a course has NO category: Without it → course disappears
+        }
+      }, // it convert this category: [{ name: "Web Dev"}]   
+      // into this category: { name: "Web Dev"}
+      {
+        $lookup: {
+          from: "users",
+          localField: "instructor",
+          foreignField: "_id",
+          as: "instructor",
+        },
+      },
+      { $unwind: { path: "$instructor", preserveNullAndEmptyArrays: true } },
+      { $sort: { createdAt: -1 } },
+    ])
+
+
+    // const courses = await Course.find().populate("category").populate("instructor").sort({ createdAt: -1 }).lean()
+    // const coursesWithCounts = await Promise.all(
+    //     courses.map(async (course) => {
+    //         const chaptersCount = await Chapter.countDocuments({ course: course._id })
+    //         return { ...course, chaptersCount }
+    //     })
+    // )    //issue it does N queries so total queries 1+n it too slow 
+    return NextResponse.json({ success: true, courses }, { status: 200 })
+  } catch (error) {
+    console.log(error);
+    return NextResponse.json(
+      { success: false, message: "Internal Server Error" },
+      { status: 500 }
+    )
+  }
 }
 
 
@@ -161,6 +161,9 @@ export async function POST(req: Request) {
       price,
       duration,
       level,
+      averageRating:0,
+      totalReviews:0,
+      totalEnrollments:0,
       isPublished,
       thumbnail: thumbnailPath,
       instructor: instructorId,

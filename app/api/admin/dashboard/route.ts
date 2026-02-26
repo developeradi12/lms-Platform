@@ -1,6 +1,9 @@
+import connectDb from "@/lib/db"
 import Category from "@/models/Category"
-import {Course} from "@/models/Course"
+import { Course } from "@/models/Course"
 import User from "@/models/User"
+import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 // import Order from "@/models/Order"
 
 export async function GET() {
@@ -11,6 +14,13 @@ export async function GET() {
       
     *  For best performance on large data, make sure filtered fields
         (like role) are indexed, otherwise it may become slow */
+    await connectDb();
+    const cookiesStores = await cookies();
+    const token = await cookiesStores.get("accessToken")?.value;
+    if (!token) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+    }
+
     const totalCourses = await Course.countDocuments()
     const totalStudents = await User.countDocuments({ role: "STUDENT" })
     const totalCategories = await Category.countDocuments()
@@ -57,7 +67,7 @@ export async function GET() {
         totalCategories,
         // totalRevenue
       },
-    //   revenueChart: formattedChart
+      //   revenueChart: formattedChart
     })
 
   } catch (error) {

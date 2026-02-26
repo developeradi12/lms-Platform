@@ -1,98 +1,138 @@
 "use client"
-import { Separator } from "@/components/ui/separator"
+
+import {
+  Bell,
+  ChevronDown,
+  LogOut,
+  Settings,
+  Search
+} from "lucide-react"
+
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Bell, ShieldCheck, User, GraduationCap } from "lucide-react"
-import { useEffect, useState } from "react"
+import { Badge } from "@/components/ui/badge"
 
-type Role = "ADMIN" | "instructor" | "STUDENT"
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel
+} from "@/components/ui/dropdown-menu"
 
-type StoredUser = {
-  name: string
-  email: string
-  role: Role
+import { useRouter } from "next/navigation"
+import api from "@/lib/api"
+
+export type Role = "ADMIN" | "instructor" | "STUDENT"
+
+interface SiteHeaderProps {
+  role?: Role
+  userName?: string
+  notificationCount?: number
 }
 
-export function SiteHeader() {
-  const [user, setUser] = useState<StoredUser | null>(null)
-  const [loading, setLoading] = useState(true)
+export function SiteHeader({
+  role = "STUDENT",
+  userName = "Guest",
+  notificationCount = 0,
+}: SiteHeaderProps) {
 
-  useEffect(() => {
-    console.log("localstorage all:", localStorage)
-    const saved = localStorage.getItem("skill_user")
-    console.log(localStorage.getItem("skill_user"));
-    console.log("saved user in header", saved);
-    if (!saved) return
+  const router = useRouter()
 
+  const handleLogout = async () => {
     try {
-      setUser(JSON.parse(saved))
-    } catch {
-      localStorage.removeItem("skill_user")
+      const res = await api.post("/api/auth/logout", { withCredentials: true })
+      if (res.data?.success) {
+        router.push("/login")
+        router.refresh()
+      }
+    } catch (error) {
+      console.log("Logout error:", error)
     }
-    setLoading(false)
-  }, [])
-
-  console.log("user in header", user);
-
-  const roleConfig: Record<Role, any> = {
-    ADMIN: {
-      title: "Admin Panel",
-      icon: <ShieldCheck className="h-4 w-4" />,
-      badge: "ADMIN",
-      badgeClass: "bg-red-600 text-white",
-    },
-    instructor: {
-      title: "Instructor Dashboard",
-      icon: <User className="h-4 w-4" />,
-      badge: "INSTRUCTOR",
-      badgeClass: "bg-blue-600 text-white",
-    },
-    STUDENT: {
-      title: "Student Dashboard",
-      icon: <GraduationCap className="h-4 w-4" />,
-      badge: "STUDENT",
-      badgeClass: "bg-green-600 text-white",
-    },
   }
-  const current = !loading && user?.role ? roleConfig[user.role] : null
+
   return (
-    <header className="flex h-(--header-height) shrink-0 items-center gap-2 border-b bg-background/60 backdrop-blur-md transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
-      <div className="flex w-full items-center gap-2 px-4 lg:gap-3 lg:px-6">
-        <SidebarTrigger className="-ml-1" />
+    <header className="sticky top-0 z-50 h-16 flex items-center border-b bg-card px-4 md:px-6">
 
-        <Separator
-          orientation="vertical"
-          className="mx-2 data-[orientation=vertical]:h-5"
-        />
+      {/* LEFT */}
+      <div className="flex items-center gap-3">
+        <SidebarTrigger />
 
-        {/* Left Title */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 text-sm font-semibold">
-            {current?.icon}
-            <h1 className="text-base font-semibold tracking-tight">
-              {current?.title||""}
-            </h1>
-          </div>
+        <h1 className="hidden sm:block text-lg font-semibold">
+          {role === "ADMIN"
+            ? "Admin Panel"
+            : role === "instructor"
+            ? "Instructor Dashboard"
+            : "Student Dashboard"}
+        </h1>
 
-          <Badge className={`rounded-xl px-2 py-0.5 text-xs ${current?.badgeClass}`}>
-            {current?.badge}
-          </Badge>
-        </div>
+        <Badge variant="outline" className="hidden sm:inline-flex text-xs capitalize">
+          {role}
+        </Badge>
+      </div>
 
-        {/* Right Side */}
-        <div className="ml-auto flex items-center gap-2">
-          <p className="hidden md:block text-sm text-muted-foreground">
-            Welcome, 
-          </p>
-          <span className="font-medium text-foreground">
-            {user?.name || "User"}
-          </span>
+      {/* RIGHT */}
+      <div className="ml-auto flex items-center gap-3">
 
-          <Button variant="ghost" size="icon" className="rounded-xl">
-            <Bell className="h-4 w-4" />
-          </Button>
-        </div>
+        {/* Notifications */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="relative">
+              <Bell className="size-5" />
+              {notificationCount > 0 && (
+                <Badge className="absolute -top-1 -right-1 size-5 p-0 flex items-center justify-center text-[10px]">
+                  {notificationCount}
+                </Badge>
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent align="end" className="w-64">
+            <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>No new notifications</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* Profile */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              className="flex items-center gap-2"
+            >
+              <div className="h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-bold">
+                {userName?.charAt(0).toUpperCase()}
+              </div>
+
+              <span className="hidden md:block text-sm font-medium">
+                {userName}
+              </span>
+
+              <ChevronDown className="size-4 hidden md:block" />
+            </Button>
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem>
+              <Settings className="mr-2 h-4 w-4" />
+              Settings
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+
+            <DropdownMenuItem
+              className="text-red-600 focus:text-red-600"
+              onClick={handleLogout}
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
       </div>
     </header>
   )

@@ -24,14 +24,13 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
-
-import UserViewModal from "./_modal/user-view"
+import { createUserSlug } from "@/lib/slug"
 
 type User = {
   _id: string
   name: string
   email: string
-  role: "STUDENT"
+  role: "STUDENT" | "INSTRUCTOR"
   enrolledCourses: number
   createdAt: string
 }
@@ -40,31 +39,34 @@ export default function AdminStudentsPage() {
   const [users, setUsers] = useState<User[]>([])
   const [search, setSearch] = useState("")
   const [loading, setLoading] = useState(true)
-  const [selectedUser, setSelectedUser] = useState<User | null>(null)
-  const [open, setOpen] = useState(false)
-
-  const fetchUsers = async () => {
-    try {
-      setLoading(true)
-      const res = await api.get("/api/admin/users")
-      setUsers(res.data?.users || [])
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Failed to load users")
-    } finally {
-      setLoading(false)
-    }
-  }
 
   useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setLoading(true)
+        const res = await api.get("/api/admin/users")
+        setUsers(res.data?.users || [])
+      } catch (error: any) {
+        toast.error(
+          error?.response?.data?.message || "Failed to load users"
+        )
+      } finally {
+        setLoading(false)
+      }
+    }
+
     fetchUsers()
   }, [])
 
   const filteredUsers = useMemo(() => {
-    if (!search) return users
+    if (!search.trim()) return users
+
     const q = search.toLowerCase().trim()
 
     return users.filter(
-      (u) => u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
+      (u) =>
+        u.name.toLowerCase().includes(q) ||
+        u.email.toLowerCase().includes(q)
     )
   }, [users, search])
 
@@ -72,7 +74,9 @@ export default function AdminStudentsPage() {
     <div className="w-full space-y-6 px-3 sm:px-4 lg:px-0">
       <Card className="rounded-2xl">
         <CardHeader className="space-y-2">
-          <CardTitle className="text-xl sm:text-2xl">All Students</CardTitle>
+          <CardTitle className="text-xl sm:text-2xl">
+            All Students
+          </CardTitle>
           <CardDescription>
             Manage registered students and view details.
           </CardDescription>
@@ -81,7 +85,6 @@ export default function AdminStudentsPage() {
         <CardContent className="space-y-5">
           {/* Search + Total */}
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            {/* Search */}
             <div className="relative w-full lg:max-w-sm">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -92,11 +95,14 @@ export default function AdminStudentsPage() {
               />
             </div>
 
-            {/* Total */}
             <Card className="rounded-2xl w-full lg:w-[280px]">
               <CardContent className="p-4 flex items-center justify-between">
-                <p className="text-muted-foreground text-sm">Total Students</p>
-                <p className="text-2xl font-bold">{users.length}</p>
+                <p className="text-muted-foreground text-sm">
+                  Total Students
+                </p>
+                <p className="text-2xl font-bold">
+                  {users.length}
+                </p>
               </CardContent>
             </Card>
           </div>
@@ -107,19 +113,14 @@ export default function AdminStudentsPage() {
               <Table className="min-w-[650px]">
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="px-4 py-3">Name</TableHead>
-
-                    {/* Email hide on mobile */}
-                    <TableHead className="px-4 py-3 hidden sm:table-cell">
+                    <TableHead>Name</TableHead>
+                    <TableHead className="hidden sm:table-cell">
                       Email
                     </TableHead>
-
-                    {/* Joined hide on small */}
-                    <TableHead className="px-4 py-3 hidden md:table-cell">
+                    <TableHead className="hidden md:table-cell">
                       Joined
                     </TableHead>
-
-                    <TableHead className="px-4 py-3 text-right">
+                    <TableHead className="text-right">
                       Actions
                     </TableHead>
                   </TableRow>
@@ -136,55 +137,64 @@ export default function AdminStudentsPage() {
                     ))
                   ) : filteredUsers.length === 0 ? (
                     <TableRow>
-                      <TableCell className="py-10 text-center" colSpan={4}>
+                      <TableCell
+                        className="py-10 text-center"
+                        colSpan={4}
+                      >
                         No students found.
                       </TableCell>
                     </TableRow>
                   ) : (
                     filteredUsers.map((user) => (
                       <TableRow key={user._id}>
-                        <TableCell className="px-4 py-4 font-medium">
+                        <TableCell className="font-medium">
                           <div className="flex flex-col">
-                            <span className="font-semibold">{user.name}</span>
-
-                            {/* Email show only on mobile (as subtext) */}
+                            <span className="font-semibold">
+                              {user.name}
+                            </span>
                             <span className="text-xs text-muted-foreground sm:hidden">
                               {user.email}
                             </span>
                           </div>
                         </TableCell>
 
-                        <TableCell className="px-4 py-4 hidden sm:table-cell">
+                        <TableCell className="hidden sm:table-cell">
                           {user.email}
                         </TableCell>
 
-                        <TableCell className="px-4 py-4 text-muted-foreground text-sm hidden md:table-cell">
-                          {new Date(user.createdAt).toLocaleDateString()}
+                        <TableCell className="hidden md:table-cell text-muted-foreground text-sm">
+                          {user.createdAt
+                            ? new Date(user.createdAt).toLocaleDateString()
+                            : "-"}
                         </TableCell>
 
-                        <TableCell className="px-4 py-4">
-                          <div className="flex flex-col sm:flex-row justify-end gap-2">
-                            {/* View */}
-                            <Button
-                              size="icon"
-                              variant="outline"
-                              className="rounded-xl"
-                              onClick={() => {
-                                setSelectedUser(user)
-                                setOpen(true)
-                              }}
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-
-                            {/* Edit */}
+                        <TableCell>
+                          <div className="flex justify-end gap-2">
                             <Button
                               asChild
                               size="icon"
                               variant="outline"
                               className="rounded-xl"
                             >
-                              <Link href={`/admin/users/${user._id}`}>
+                              <Link
+                                href={`/admin/users/${createUserSlug(
+                                  user.name,
+                                  user._id
+                                )}`}
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Link>
+                            </Button>
+
+                            <Button
+                              asChild
+                              size="icon"
+                              variant="outline"
+                              className="rounded-xl"
+                            >
+                              <Link
+                                href={`/admin/users/${user._id}/edit`}
+                              >
                                 <Pencil className="w-4 h-4" />
                               </Link>
                             </Button>
@@ -197,9 +207,6 @@ export default function AdminStudentsPage() {
               </Table>
             </div>
           </div>
-
-          {/* Modal */}
-          <UserViewModal user={selectedUser} open={open} onOpenChange={setOpen} />
         </CardContent>
       </Card>
     </div>

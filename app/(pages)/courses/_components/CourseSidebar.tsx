@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Progress } from "@/components/ui/progress"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -10,7 +10,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-import { CheckCircle, PlayCircle } from "lucide-react"
+import { CheckCircle, PlayCircle, Menu, X } from "lucide-react"
 import clsx from "clsx"
 import { Chapter } from "@/types/chapter"
 import { Lesson } from "@/types/lesson"
@@ -26,6 +26,8 @@ export default function CourseSidebar({
   currentLessonId,
   onSelectLesson,
 }: Props) {
+  const [isOpen, setIsOpen] = useState(false)
+
   const allLessons = useMemo(() => {
     return chapters.flatMap((ch) => ch.lessons ?? [])
   }, [chapters])
@@ -47,90 +49,119 @@ export default function CourseSidebar({
   }, [chapters, currentLessonId])
 
   return (
-    <div className="h-screen flex flex-col bg-background border-r">
-      {/* ===== Header ===== */}
-      <div className="p-6 border-b backdrop-blur bg-background/80 sticky top-0 z-10">
-        <h2 className="text-lg font-semibold tracking-tight">
-          Course Content
-        </h2>
+    <>
+      {/* ================= MOBILE TOGGLE BUTTON ================= */}
+      <button
+        onClick={() => setIsOpen(true)}
+        className="md:hidden fixed top-4 left-4 z-50 bg-white shadow-lg p-2 rounded-xl hover:scale-105 transition"
+      >
+        <Menu size={20} />
+      </button>
 
-        <div className="mt-4 space-y-2">
-          <Progress value={progress} className="h-2" />
+      {/* ================= OVERLAY ================= */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.4 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsOpen(false)}
+            className="fixed inset-0 bg-black z-40 md:hidden"
+          />
+        )}
+      </AnimatePresence>
 
-          <AnimatePresence mode="wait">
-            <motion.p
-              key={progress}
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="text-sm text-muted-foreground"
-            >
-              {completedCount} / {allLessons.length} completed ({progress}%)
-            </motion.p>
-          </AnimatePresence>
+      {/* ================= SIDEBAR ================= */}
+      <motion.div
+        initial={{ x: -350 }}
+        animate={{ x: isOpen || typeof window !== "undefined" && window.innerWidth >= 768 ? 0 : -350 }}
+        transition={{ type: "spring", stiffness: 260, damping: 25 }}
+        className="fixed md:static z-50 h-screen w-[320px] bg-white shadow-2xl md:shadow-lg rounded-r-3xl md:rounded-none flex flex-col"
+      >
+        {/* ===== Close Button (Mobile) ===== */}
+        <div className="md:hidden flex justify-end p-4">
+          <button
+            onClick={() => setIsOpen(false)}
+            className="p-2 rounded-lg hover:bg-gray-100 transition"
+          >
+            <X size={18} />
+          </button>
         </div>
-      </div>
 
-      {/* ===== Chapters ===== */}
-      <ScrollArea className="flex-1">
-        <div className="p-4">
-          {chapters.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No chapters available.
-            </p>
-          ) : (
-            <Accordion
-              type="multiple"
-              defaultValue={defaultOpenChapters}
-              className="space-y-3"
-            >
-              {chapters.map((chapter) => (
+        {/* ================= HEADER ================= */}
+        <div className="px-6 pb-6">
+          <h2 className="text-xl font-bold tracking-tight mb-4">
+            Course Content
+          </h2>
+
+          <Progress
+            value={progress}
+            className="h-2 rounded-full shadow-inner"
+          />
+
+          <p className="text-sm text-gray-500 mt-2">
+            {completedCount} / {allLessons.length} completed ({progress}%)
+          </p>
+        </div>
+
+        {/* ================= CHAPTERS ================= */}
+        <ScrollArea className="flex-1 px-4 pb-6">
+          <Accordion
+            type="multiple"
+            defaultValue={defaultOpenChapters}
+            className="space-y-4"
+          >
+            {chapters.map((chapter) => {
+              const chapterLessons = chapter.lessons ?? []
+              const chapterCompleted = chapterLessons.filter(
+                (l) => l.isCompleted
+              ).length
+
+              return (
                 <AccordionItem
                   key={chapter._id}
                   value={chapter._id}
-                  className="border rounded-2xl px-3 bg-muted/30"
+                  className="rounded-2xl bg-gray-50 shadow-md hover:shadow-lg transition-all px-4"
                 >
-                  <AccordionTrigger className="text-sm font-semibold hover:no-underline">
-                    {chapter.title}
+                  <AccordionTrigger className="py-4 text-sm font-semibold hover:no-underline">
+                    <div className="flex justify-between w-full">
+                      <span>{chapter.title}</span>
+                      <span className="text-xs text-gray-500">
+                        {chapterCompleted}/{chapterLessons.length}
+                      </span>
+                    </div>
                   </AccordionTrigger>
 
                   <AccordionContent>
-                    <div className="space-y-2 pt-2 pb-3">
-                      {(chapter.lessons ?? []).map((lesson) => {
+                    <div className="space-y-2 pb-4">
+                      {chapterLessons.map((lesson) => {
                         const isActive =
                           lesson._id === currentLessonId
 
                         return (
                           <motion.button
                             key={lesson._id}
-                            layout
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={() => onSelectLesson(lesson)}
+                            whileHover={{ scale: 1.03 }}
+                            whileTap={{ scale: 0.97 }}
+                            onClick={() => {
+                              onSelectLesson(lesson)
+                              setIsOpen(false)
+                            }}
                             className={clsx(
-                              "relative w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all",
+                              "w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left",
                               isActive
-                                ? "bg-primary/10 border border-primary shadow-sm"
-                                : "hover:bg-muted"
+                                ? "bg-indigo-100 shadow-md"
+                                : "hover:bg-white hover:shadow-sm"
                             )}
                           >
-                            {/* Animated Active Indicator */}
-                            {isActive && (
-                              <motion.div
-                                layoutId="activeLesson"
-                                className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-r-full"
-                              />
-                            )}
-
                             {lesson.isCompleted ? (
                               <CheckCircle
-                                className="text-green-500 shrink-0"
+                                className="text-green-500"
                                 size={18}
                               />
                             ) : (
                               <PlayCircle
-                                className="shrink-0 text-muted-foreground"
+                                className="text-gray-400"
                                 size={18}
                               />
                             )}
@@ -138,7 +169,7 @@ export default function CourseSidebar({
                             <span
                               className={clsx(
                                 "text-sm font-medium",
-                                isActive && "text-primary"
+                                isActive && "text-indigo-600"
                               )}
                             >
                               {lesson.title}
@@ -149,11 +180,11 @@ export default function CourseSidebar({
                     </div>
                   </AccordionContent>
                 </AccordionItem>
-              ))}
-            </Accordion>
-          )}
-        </div>
-      </ScrollArea>
-    </div>
+              )
+            })}
+          </Accordion>
+        </ScrollArea>
+      </motion.div>
+    </>
   )
 }

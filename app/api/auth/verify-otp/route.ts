@@ -71,6 +71,7 @@ export async function POST(req: Request) {
     // 6) create tokens
     const accessToken = await signAccessToken({
       userId: user._id,
+      // userName:user.name,
       email: user.email,
       role: user.role,
     })
@@ -91,8 +92,6 @@ export async function POST(req: Request) {
         message: "Signup successful",
         user: {
           _id: user._id,
-          name: user.name,
-          email: user.email,
           role: user.role,
         },
         accessToken,
@@ -105,7 +104,7 @@ export async function POST(req: Request) {
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
       path: "/",
-      maxAge: 60 * 15,
+      maxAge: 60 * 2,
     })
 
     res.cookies.set("refreshToken", refreshToken, {

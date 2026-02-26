@@ -1,5 +1,7 @@
 import Category from "@/models/Category"
 import { Course } from "@/models/Course"
+import connectDb from "../db"
+import { NextResponse } from "next/server"
 
 interface GetCoursesProps {
     search: string
@@ -41,6 +43,7 @@ export async function getCourses({
 
     return { total, courses }
 }
+
 
 /*{Note}
  * $regex: search

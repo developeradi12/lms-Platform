@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
 
     const cookieStore = await cookies()
     const accessToken = cookieStore.get("accessToken")?.value
-
+    
     if (!accessToken) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
@@ -18,16 +18,12 @@ export async function GET(req: NextRequest) {
     const accessSecret = new TextEncoder().encode(
       process.env.ACCESS_TOKEN_SECRET!
     )
-
     const { payload }: any = await jwtVerify(accessToken, accessSecret)
 
     const user = await User.findById(payload.userId).select("name role email")
-    
     if (!user) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
-
-
     return NextResponse.json(
       {
         user: {

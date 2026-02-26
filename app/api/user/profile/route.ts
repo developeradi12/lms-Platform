@@ -7,16 +7,22 @@ import User from "@/models/User";
 export async function GET() {
     try {
         await connectDb();
-        const token = (await cookies()).get("refreshToken")?.value;
-        // console.log(token);
-        if (!token)
-            return NextResponse.json({
-                message: "Unauthorized"
-            },
-                { status: 401 })
-        const decoded: any = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET!)
+        const cookieStore = await cookies();
+        const accessToken = cookieStore.get("accessToken")?.value
+
+        if (!accessToken) {
+            return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+        }
+
+        const decoded: any = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET!)
         // console.log(decoded);
-        const user = await User.findById(decoded.userId).select("name email role  createdAt")
+        const user = await User.findById(decoded.userId).select({
+            name: 1,
+            email: 1,
+            role: 1,
+            createdAt: 1,
+            password: 0 // Explicitly force password out
+        });
         // console.log(user);
         return NextResponse.json({ user })
     } catch (error) {
@@ -28,10 +34,10 @@ export async function PUT(req: Request) {
     try {
         await connectDb()
 
-        const token = (await cookies()).get("refreshToken")?.value
+        const token = (await cookies()).get("accessToken")?.value
         if (!token) return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
 
-        const decoded: any = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET!)
+        const decoded: any = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET!)
 
         const body = await req.json()
 
