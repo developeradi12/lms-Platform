@@ -36,37 +36,20 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Pencil, Plus, Search, Trash2 } from "lucide-react"
-import slugify from "slugify"
-import api from "@/lib/api"
-
-
-type Course = {
-  slug: string
-  _id: string
-  title: string
-  price: number
-  isPublished: boolean
-  category?: {
-    _id: string
-    name: string
-  }
-  chaptersCount?: number
-  createdAt: string
-}
+import { AdminCourse } from "@/types"
+import { courseService } from "@/lib/service/course"
 
 export default function AdminCoursesPage() {
   const [search, setSearch] = useState("")
   const [loading, setLoading] = useState(true)
-  const [courses, setCourses] = useState<Course[]>([])
+  const [courses, setCourses] = useState<AdminCourse[]>([])
   const [deletingId, setDeletingId] = useState<string | null>(null)
-
 
   const fetchCourses = async () => {
     try {
       setLoading(true)
-      const res = await api.get("/api/admin/courses")
-
-      setCourses(res.data?.courses || [])
+      const data = await courseService.getAll()
+      setCourses(data)
     } catch (error: any) {
       toast.error(error?.response?.data?.message || "Failed to load courses")
     } finally {
@@ -89,10 +72,10 @@ export default function AdminCoursesPage() {
     })
   }, [courses, search])
 
-  const handleDelete = async (slug: string) => {
+  const handleDelete = async (slug: AdminCourse["slug"]) => {
     try {
       setDeletingId(slug)
-      await api.delete(`/api/admin/courses/${slug}`)
+      await courseService.deleteBySlug(slug)
       toast.success("Course deleted")
       fetchCourses()
     } catch (error: any) {

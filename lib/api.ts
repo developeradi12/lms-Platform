@@ -5,7 +5,7 @@ import axios from "axios"
  * - withCredentials: VERY IMPORTANT for cookies (accessToken / refreshToken)
  */
 const api = axios.create({
-  // baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000",
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000",
   withCredentials: true,
 })
 /**
@@ -51,10 +51,10 @@ api.interceptors.response.use(
     * Never intercept refresh endpoint itself,
     * otherwise infinite loop can happen.
     */
-    if (original?.url?.includes("/api/auth/refresh")) {
-      window.location.href = "/login"
-      return Promise.reject(err)
-    }
+    // if (original?.url?.includes("/api/auth/refresh")) {
+    //   window.location.href = "/login"
+    //   return Promise.reject(err)
+    // }
 
     /**
      * - if error is 401 (Unauthorized)
@@ -85,36 +85,27 @@ api.interceptors.response.use(
          *   2) generate new accessToken
          *   3) set new accessToken cookie
          */
-        await api.post("/api/auth/refresh")
+        await api.post("/api/auth/refresh", {}, { withCredentials: true })
 
         /**
          * Refresh success:
          * - allow all queued requests to continue
          */
         processQueue(null)
-
+        isRefreshing = false
         /**
          *  Retry the original failed request
          */
         return api(original)
-      } catch (e) {
-        /**
-         *  Refresh failed:
-         * - reject all queued requests
-         * - user should be logged out now
-         */
-        processQueue(e)
-        window.location.href = "/login"
-        return Promise.reject(e)
-      } finally {
-        /**
-         *  Refresh finished
-         * - allow future refresh attempts
-         */
+      } catch (refreshError) {
+        processQueue(refreshError)
         isRefreshing = false
+
+        // 🔥 IMPORTANT: Redirect to login
+        // window.location.href = "/login"
+        return Promise.reject(refreshError)
       }
     }
-
     /**
      * If error is not 401,
      * just reject normally

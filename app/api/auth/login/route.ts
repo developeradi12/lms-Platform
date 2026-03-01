@@ -6,9 +6,14 @@ import { signAccessToken, signRefreshToken } from "@/utils/jwt"
 
 export async function POST(req: NextRequest) {
   try {
+
+    // Step-01 : Connet to DB
     await connectDb()
+
+    // Step-02 : Get the data
     const { email, password } = await req.json()
 
+    // Step-03 : Verify data
     if (!email || !password) {
       return NextResponse.json(
         { success: false, message: "Email & password required" },
@@ -17,6 +22,7 @@ export async function POST(req: NextRequest) {
     }
 
     const user = await User.findOne({ email })
+
     if (!user) {
       return NextResponse.json(
         { success: false, message: "Invalid credentials" },
@@ -25,6 +31,7 @@ export async function POST(req: NextRequest) {
     }
 
     const ok = await bcrypt.compare(password, user.password)
+
     if (!ok) {
       return NextResponse.json(
         { success: false, message: "Invalid credentials" },

@@ -26,28 +26,19 @@ import Reveal from "@/components/animations/Reveal"
 interface Props {
   course: Course
   isEnrolled?: boolean
+  isWishlisted?: boolean
+  isLoggedIn?: boolean
 }
 
-export default function CourseDetailsClient({ course, isEnrolled = false }: Props) {
+export default function CourseDetailsClient({ course, isEnrolled = false, isWishlisted = false, isLoggedIn = false }: Props) {
   const router = useRouter()
   const isFree = course.price === 0
 
   const [open, setOpen] = useState(false)
   const [activeLesson, setActiveLesson] = useState<Lesson | null>(null)
-  const [isInWishlist, setIsInWishlist] = useState(false)
+  const [isInWishlist, setIsInWishlist] = useState(isWishlisted)
   const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    checkWishlist()
-  }, [])
-
-  const checkWishlist = async () => {
-    try {
-      const res = await api.get("/api/wishlist")
-      const exists = res.data.wishlist.some((item: any) => item._id === course._id)
-      setIsInWishlist(exists)
-    } catch { }
-  }
 
   const instructorName =
     course.instructor?.name ||
@@ -72,6 +63,10 @@ export default function CourseDetailsClient({ course, isEnrolled = false }: Prop
   }
 
   const handleWishlist = async () => {
+    if (!isLoggedIn) {
+      router.push(`/login?redirect=/courses/${course.slug}`)
+      return
+    }
     try {
       setLoading(true)
       const res = await api.post("/api/wishlist/toggle", { courseId: course._id })
@@ -128,13 +123,26 @@ export default function CourseDetailsClient({ course, isEnrolled = false }: Prop
               <Button
                 size="lg"
                 className="w-full"
-                onClick={() =>
-                  isEnrolled
-                    ? router.push(`/courses/${course.slug}/learn`)
-                    : router.push(`/checkout/${course.slug}`)
-                }
+                onClick={() => {
+                  if (!isLoggedIn) {
+                    router.push(`/login?redirect=/courses/${course.slug}`)
+                    return
+                  }
+
+                  if (isEnrolled) {
+                    router.push(`/courses/${course.slug}/learn`)
+                  } else {
+                    router.push(`/checkout/${course.slug}`)
+                  }
+                }}
               >
-                {isEnrolled ? "Continue Learning" : isFree ? "Enroll Now" : "Buy Now"}
+                {!isLoggedIn
+                  ? "Login to Enroll"
+                  : isEnrolled
+                    ? "Continue Learning"
+                    : isFree
+                      ? "Enroll Now"
+                      : "Buy Now"}
               </Button>
 
               <Button

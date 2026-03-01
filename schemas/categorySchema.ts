@@ -23,7 +23,7 @@ export const createCategoryApiSchema = z.object({
   metaDescription: z.string().optional(),
 })
 export const updateCategorySchema = z.object({
-  name: z.string().min(6, "Name is required"),
+  name: z.string().min(6, "Name is required").optional(),
   description: z.string().optional(),
  imageUrl: z.string().optional(), // old url
   // new file upload (optional)
@@ -54,5 +54,6 @@ export const categorySchema = z.object({
 
 export type CreateCategoryFormValues = z.infer<typeof createCategoryFormSchema>
 export type CreateCategoryBody = z.infer<typeof createCategoryApiSchema>
+
 export type UpdateCategoryform = z.infer<typeof updateCategorySchema>
 export type Category = z.infer<typeof categorySchema>

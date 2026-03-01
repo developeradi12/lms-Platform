@@ -2,11 +2,8 @@
 
 import React, { useMemo, useState } from "react"
 import Link from "next/link"
-import api from "@/lib/api"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
-
-import { z } from "zod"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 
@@ -24,8 +21,9 @@ import {
 import { Switch } from "@/components/ui/switch"
 import ThumbnailUpload from "@/components/Upload"
 import { MultiSelect } from "@/components/multiSelect"
-import { levelOptions, prerequisiteOptions, tagOptions } from "@/lib/course-option"
+import { levelOptions } from "@/lib/course-option"
 import { CourseCreateInput, CourseCreateSchema } from "@/schemas/courseSchema"
+import { courseService } from "@/lib/service/course"
 
 type CategoryOption = {
   _id: string
@@ -42,19 +40,18 @@ export default function CreateCourseForm({ categories }: Props) {
   const [loading, setLoading] = useState(false)
 
   const form = useForm<CourseCreateInput>({
-    resolver: zodResolver(CourseCreateSchema) as any,
+    resolver: zodResolver(CourseCreateSchema),
     defaultValues: {
       title: "",
       description: "",
-      thumbnail: undefined,
       categories: [],
       tags: [],
       prerequisites: [],
-      level: 'BEGINNER',
+      level: "BEGINNER",
       price: 0,
       duration: 0,
       isPublished: false,
-    }
+    },
   })
 
   /* ------------------ OPTIONS ------------------ */
@@ -73,53 +70,29 @@ export default function CreateCourseForm({ categories }: Props) {
   const onSubmit = async (values: CourseCreateInput) => {
     try {
       setLoading(true)
-
-      console.log("🟢 Raw Form Values:", values)
-
       const formData = new FormData()
-
       Object.entries(values).forEach(([key, value]) => {
         if (value === undefined || value === null) {
-          console.log(`⏭ Skipping ${key} (null/undefined)`)
           return
         }
-
         if (Array.isArray(value)) {
-          console.log(`📦 ${key} is Array:`, value)
-
           value.forEach((v) => {
-            console.log(`   ➜ Appending ${key}:`, v)
             formData.append(key, String(v))
           })
         }
         else if (value instanceof File) {
-          console.log(`🖼 ${key} is File:`, value.name, value.size, "bytes")
-
           formData.append(key, value)
         }
         else {
-          console.log(`✏️ Appending ${key}:`, value)
-
           formData.append(key, String(value))
         }
       })
-
-      // 🔥 Check final FormData content
-      console.log("📤 Final FormData entries:")
-      for (let pair of formData.entries()) {
-        console.log(pair[0], pair[1])
-      }
-
-      const response = await api.post("/api/admin/courses", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      })
-
-      console.log("✅ API Response:", response.data)
+      await courseService.createCourse(formData);
 
       toast.success("Course created successfully")
       router.push("/admin/courses")
+
     } catch (error: any) {
-      console.error("❌ API Error:", error?.response?.data || error)
       toast.error(error?.response?.data?.message || "Something went wrong")
     } finally {
       setLoading(false)
@@ -154,10 +127,7 @@ export default function CreateCourseForm({ categories }: Props) {
 
         <CardContent>
           <form
-            onSubmit={form.handleSubmit(onSubmit,
-              (errors) => {
-                console.log("❌ Validation Errors:", errors)
-              })}
+            onSubmit={form.handleSubmit(onSubmit)}
             className="space-y-8"
           >
             {/* Title */}
@@ -223,41 +193,103 @@ export default function CreateCourseForm({ categories }: Props) {
               </div>
             </div>
 
-
-
-
             {/* Tags */}
             <div className="space-y-2">
               <Label>Tags</Label>
-              <Controller
-                control={form.control}
-                name="tags"
-                render={({ field }) => (
-                  <MultiSelect
-                    options={tagOptions}
-                    defaultValue={field.value}
-                    onValueChange={field.onChange}
-                    placeholder="Select tags..."
-                  />
-                )}
-              />
-            </div>
 
+              <div className="flex flex-wrap gap-2 border rounded-md p-2">
+                {form.watch("tags").map((tag, index) => (
+                  <span
+                    key={index}
+                    className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded-md text-sm"
+                  >
+                    {tag}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const updated = form
+                          .getValues("tags")
+                          .filter((_, i) => i !== index)
+                        form.setValue("tags", updated)
+                      }}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      ✕
+                    </button>
+                  </span>
+                ))}
+
+                <Input
+                  type="text"
+                  placeholder="Type and press Enter..."
+                  className="border-none focus-visible:ring-0 shadow-none w-auto flex-1 min-w-[150px]"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault()
+                      const value = e.currentTarget.value.trim()
+
+                      if (!value) return
+
+                      const existing = form.getValues("tags")
+
+                      if (!existing.includes(value)) {
+                        form.setValue("tags", [...existing, value])
+                      }
+
+                      e.currentTarget.value = ""
+                    }
+                  }}
+                />
+              </div>
+            </div>
             {/* Prerequisites */}
             <div className="space-y-2">
               <Label>Prerequisites</Label>
-              <Controller
-                control={form.control}
-                name="prerequisites"
-                render={({ field }) => (
-                  <MultiSelect
-                    options={prerequisiteOptions}
-                    defaultValue={field.value}
-                    onValueChange={field.onChange}
-                    placeholder="Select prerequisites..."
-                  />
-                )}
-              />
+
+              <div className="flex flex-wrap gap-2 border rounded-md p-2">
+                {form.watch("prerequisites").map((item, index) => (
+                  <span
+                    key={index}
+                    className="flex items-center gap-1 bg-secondary/20 text-secondary-foreground px-2 py-1 rounded-md text-sm"
+                  >
+                    {item}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const updated = form
+                          .getValues("prerequisites")
+                          .filter((_, i) => i !== index)
+                        form.setValue("prerequisites", updated)
+                      }}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      ✕
+                    </button>
+                  </span>
+                ))}
+
+                <Input
+                  type="text"
+                  placeholder="Type and press Enter..."
+                  className="border-none focus-visible:ring-0 shadow-none w-auto flex-1 min-w-[150px]"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault()
+                      const value = e.currentTarget.value.trim()
+
+                      if (!value) return
+
+                      const existing = form.getValues("prerequisites")
+
+                      if (!existing.includes(value)) {
+                        form.setValue("prerequisites", [...existing, value])
+                      }
+
+                      e.currentTarget.value = ""
+                    }
+                  }}
+                />
+              </div>
             </div>
 
             {/* Price + Duration */}
@@ -281,17 +313,27 @@ export default function CreateCourseForm({ categories }: Props) {
 
             {/* Thumbnail */}
             <div className="space-y-2">
-              <Label>Thumbnail</Label>
+              <Label>Thumbnail *</Label>
+
               <Controller
                 control={form.control}
                 name="thumbnail"
+                rules={{ required: "Thumbnail is required" }}
                 render={({ field }) => (
-                  <ThumbnailUpload
-                    value={field.value}
-                    onChange={(file) =>
-                      field.onChange(file)
-                    }
-                  />
+                  <>
+                    <ThumbnailUpload
+                      value={field.value}
+                      onChange={(file) => {
+                        field.onChange(file)
+                      }}
+                    />
+
+                    {form.formState.errors.thumbnail && (
+                      <p className="text-sm text-red-500">
+                        {form.formState.errors.thumbnail.message as string}
+                      </p>
+                    )}
+                  </>
                 )}
               />
             </div>

@@ -8,7 +8,7 @@ import { toast } from "sonner"
 import { Pencil, Plus, Search, Trash2 } from "lucide-react"
 
 import api from "@/lib/api"
-import { Category } from "@/schemas/categorySchema"
+
 import {
   Table,
   TableBody,
@@ -44,18 +44,17 @@ import {
 import { useDebounce } from "@/hooks/useDebounce"
 import Pagination from "@/components/common/Pagination"
 import { useQueryParams } from "@/hooks/useQueryParams"
-
+import { AdminCategory } from "@/types"
 
 type Props = {
   page: number
   search: string
   sort: string
-
 }
 
 export default function AdminCategoriesClient({ page, search, sort }: Props) {
   const limit = 10
-  const [items, setItems] = useState<Category[]>([])
+  const [items, setItems] = useState<AdminCategory[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -99,7 +98,7 @@ export default function AdminCategoriesClient({ page, search, sort }: Props) {
     try {
       setLoading(true)
 
-      const res = await api.get("/api/admin/categories", {
+      const res = await api.get<{categories: AdminCategory[],total: number}>("/api/admin/categories", {
         params: {
           page,
           limit,
@@ -129,7 +128,7 @@ export default function AdminCategoriesClient({ page, search, sort }: Props) {
     setParams({ page: p, search, sort })
   }
 
-  const handleDelete = async (slug: string) => {
+  const handleDelete = async (slug: AdminCategory["slug"]) => {
     try {
       setDeletingId(slug)
       await api.delete(`/api/admin/categories/${slug}`)

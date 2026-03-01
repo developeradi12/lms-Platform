@@ -11,17 +11,18 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
 import api from "@/lib/api";
-import { UpdateCategoryform, updateCategorySchema } from "@/schemas/categorySchema";
+import {  updateCategorySchema } from "@/schemas/categorySchema";
 import ThumbnailUpload from "@/components/Upload";
+import { CategorySlug, UpdateCategoryForm } from "@/types"
 
 export default function EditCategoryPage() {
     const router = useRouter()
-    const params = useParams<{ slug: string }>()
+    const params = useParams<CategorySlug>()
     const slug = params.slug
     console.log("check", slug);
     const [loading, setLoading] = useState(true)
 
-    const form = useForm<UpdateCategoryform>({
+    const form =useForm<UpdateCategoryForm>({
         resolver: zodResolver(updateCategorySchema),
         defaultValues: {
             name: "",
@@ -40,7 +41,6 @@ export default function EditCategoryPage() {
         try {
             setLoading(true);
             const res = await api.get(`/api/admin/categories/${slug}`);
-            console.log("res", res);
             const category = res.data?.category
 
             if (!category) {
@@ -68,9 +68,8 @@ export default function EditCategoryPage() {
         if (slug) fetchCategory();
     }, [slug]);
 
-    const onSubmit = async (values: UpdateCategoryform) => {
+    const onSubmit = async (values: UpdateCategoryForm) => {
         // console.log("SUBMIT TRIGGERED")
-        console.log("FORM VALUES:", values)
         try {
            setLoading(true)
             const formData = new FormData();

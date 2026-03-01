@@ -5,7 +5,6 @@ import api from "@/lib/api"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { z } from "zod"
 import { Controller, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 
@@ -17,105 +16,91 @@ import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import ThumbnailUpload from "@/components/Upload"
-
-type Category = {
-  _id: string
-  name: string
-}
-
-type Course = {
-  _id: string
-  title: string
-  description?: string
-  thumbnail?: string
-  category?: string | { _id: string; name: string }
-  price: number
-  duration?: number
-  isPublished: boolean
-}
-
-const formSchema = z.object({
-  title: z.string().min(2, "Course title is required"),
-  description: z.string().optional(),
-  thumbnail: z.union([
-    z.string(),
-    z.instanceof(File)
-  ]).optional(),
-  category: z.string().min(1, "Category is required"),
-  price: z.coerce.number().min(0, "Price cannot be negative"),
-  duration: z.coerce.number().min(0, "Duration cannot be negative").optional(),
-  isPublished: z.boolean().default(false),
-})
-
-type FormValues = z.input<typeof formSchema>
+import { CourseUpdateInput, CourseUpdateSchema } from "@/schemas/courseSchema"
+import { categoryService } from "@/lib/service/category"
+import { courseService } from "@/lib/service/course"
+import { MultiSelect } from "@/components/multiSelect"
+import { levelOptions } from "@/lib/course-option"
+import { CourseSlug, LeanCategory, LeanCourse } from "@/types"
 
 export default function EditCoursePage() {
-  const { slug } = useParams()
+  const params = useParams<CourseSlug>()
+  const slug = params.slug
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [categories, setCategories] = useState<LeanCategory[]>([])
+  const [categoriesLoaded, setCategoriesLoaded] = useState(false)
 
-  const [categories, setCategories] = useState<Category[]>([])
-
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<CourseUpdateInput>({
+    resolver: zodResolver(CourseUpdateSchema),
     defaultValues: {
       title: "",
       description: "",
-      thumbnail: "",
-      category: "",
+      thumbnailUrl: "",
+      thumbnailFile: undefined,
+      categories: [],
       price: 0,
       duration: 0,
+      level: "BEGINNER",
       isPublished: false,
+      tags: [],
+      prerequisites: []
     },
   })
 
-
+  // ✅ Fetch Categories (must load first)
   const fetchCategories = async () => {
     try {
-      const res = await api.get("/api/admin/categories")
-      setCategories(res.data?.categories || [])
+      const res = await categoryService.getAll()
+      setCategories(res)
+      console.log("res",res);
+      setCategoriesLoaded(true)
     } catch (error: any) {
       toast.error(error?.response?.data?.message || "Failed to load categories")
+      setCategoriesLoaded(true) // Continue anyway
     }
   }
 
-  //  Fetch Course detail
+  // ✅ Generate category options after categories are loaded
+  const categoryOptions = categories.map((cat) => ({
+    label: cat.name,
+    value: cat._id,
+  }))
+
+  const thumbnailUrl = form.watch("thumbnailUrl");
+  // ✅ Fetch Course Detail & Prefill Form
   const fetchCourse = async () => {
     try {
-      setLoading(true)
-      console.log("heelo");
-      const res = await api.get(`/api/admin/courses/${slug}`)
-      console.log(res);
-      const course: Course = res.data?.course
-
-      if (!course) {
+      const res = await courseService.getBySlug(slug)
+      console.log("course",res);
+      if (!res) {
         toast.error("Course not found")
         router.push("/admin/courses")
         return
       }
 
-      const categoryId =
-        typeof course.category === "string"
-          ? course.category
-          : course.category?._id || ""
-
+      // ✅ Reset form with all course data
       form.reset({
-        title: course.title || "",
-        description: course.description || "",
-        thumbnail: course.thumbnail || "",
-        category: categoryId,
-        price: course.price ?? 0,
-        duration: course.duration ?? 0,
-        isPublished: course.isPublished ?? false,
+        title: res.title || "",
+        description: res.description || "",
+        thumbnailUrl: res.thumbnail ??"", // Shows existing thumbnail
+        thumbnailFile: undefined,
+        // ✅ Categories: Map to IDs for MultiSelect
+        categories: res.categories?.map((cat: any) => cat._id) || [],
+
+        price: res.price ?? 0,
+        duration: res.duration ?? 0,
+        isPublished: res.isPublished ?? false,
+
+        // ✅ Tags array - will display as chips
+        tags: res.tags || [],
+
+        // ✅ Prerequisites array - will display as chips
+        prerequisites: res.prerequisites || [],
+
+        level: res.level || "BEGINNER",
       })
     } catch (error: any) {
       toast.error(error?.response?.data?.message || "Failed to load course")
@@ -125,31 +110,57 @@ export default function EditCoursePage() {
     }
   }
 
+  // ✅ Load categories first, then course data
   useEffect(() => {
     if (!slug) return
-    fetchCategories()
-    fetchCourse()
+
+    const loadInitialData = async () => {
+      await fetchCategories()
+    }
+
+    loadInitialData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug])
 
-  // ✅ Submit
-  const onSubmit = async (values: FormValues) => {
+  // ✅ Load course data once categories are ready
+  useEffect(() => {
+    if (!categoriesLoaded || !slug) return
+
+    fetchCourse()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categoriesLoaded, slug])
+
+  // ✅ Submit Handler
+  const onSubmit = async (values: CourseUpdateInput) => {
     try {
       setSaving(true)
 
-      const formData = new FormData();
+      const formData = new FormData()
 
+      // ✅ Handle all form fields
       Object.entries(values).forEach(([key, value]) => {
-        formData.append(key, value as any);
-      });
+        // Handle Arrays (categories, tags, prerequisites)
+        if (Array.isArray(value)) {
+          value.forEach((item) => {
+            formData.append(key, item)
+          })
+        }
+        // Handle File objects (new thumbnail uploads)
+        else if (value instanceof File) {
+          formData.append(key, value)
+        }
+        // Handle other values
+        else if (value !== null && value !== undefined) {
+          formData.append(key, String(value))
+        }
+      })
 
+      // ✅ Send update request
       await api.put(`/api/admin/courses/${slug}`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
-      });
-
-      // await apiput(`/api/admin/courses/${slug}`, values)
+      })
 
       toast.success("Course updated successfully")
       router.push("/admin/courses")
@@ -218,67 +229,216 @@ export default function EditCoursePage() {
               />
             </div>
 
-            {/* Category + Price */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              {/* Category */}
+            {/* Level + Categories */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label>Category *</Label>
-
-                <Select
-                  value={form.watch("category")}
-                  onValueChange={(val) => form.setValue("category", val)}
-                >
-                  <SelectTrigger className="rounded-xl">
-                    <SelectValue placeholder="Select category..." />
-                  </SelectTrigger>
-
-                  <SelectContent>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat._id} value={cat._id}>
-                        {cat.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                {form.formState.errors.category && (
-                  <p className="text-sm text-red-500">
-                    {form.formState.errors.category.message}
-                  </p>
-                )}
+                <Label>Level *</Label>
+                <Controller
+                  control={form.control}
+                  name="level"
+                  render={({ field }) => (
+                    <MultiSelect
+                      options={levelOptions}
+                      value={field.value ? [field.value] : []}
+                      onValueChange={(val) => field.onChange(val[0] || "BEGINNER")}
+                      closeOnSelect
+                      maxCount={1}
+                      placeholder="Select level..."
+                    />
+                  )}
+                />
               </div>
 
-              {/* Price */}
+              <div className="space-y-2">
+                <Label>Categories {(form.watch("categories")?.length ?? 0) > 0 && <span className="text-xs text-muted-foreground">({form.watch("categories")?.length ?? 0})</span>}</Label>
+                <p className="text-xs text-muted-foreground">Select one or more categories</p>
+                <Controller
+                  control={form.control}
+                  name="categories"
+                  render={({ field }) => (
+                    <MultiSelect
+                      options={categoryOptions}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      placeholder="Select categories..."
+                    />
+                  )}
+                />
+              </div>
+            </div>
+
+            {/* Tags */}
+            <div className="space-y-2">
+              <Label>Tags {(form.watch("tags")?.length ?? 0) > 0 && <span className="text-xs text-muted-foreground">({form.watch("tags")?.length ?? 0})</span>}</Label>
+              <p className="text-xs text-muted-foreground">
+                Add tags to help students find your course. Type and press Enter.
+              </p>
+
+              <div className="flex flex-wrap gap-2 border rounded-lg p-3 bg-slate-50">
+                {/* Display existing tags */}
+                {(form.watch("tags")?.length ?? 0) > 0 ? (
+                  (form.watch("tags") ?? []).map((tag, index) => (
+                    <span
+                      key={index}
+                      className="flex items-center gap-2 bg-blue-100 text-blue-700 px-3 py-1 rounded-lg text-sm font-medium"
+                    >
+                      {tag}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = (form.getValues("tags") ?? [])
+                            .filter((_, i) => i !== index)
+                          form.setValue("tags", updated)
+                        }}
+                        className="text-blue-600 hover:text-red-600 font-bold"
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  ))
+                ) : (
+                  <p className="text-xs text-muted-foreground py-2">No tags added yet</p>
+                )}
+
+                {/* Input for new tags */}
+                <Input
+                  type="text"
+                  placeholder="Add a tag..."
+                  className="border-none focus-visible:ring-0 shadow-none px-2 py-1 flex-1 min-w-[150px] bg-transparent"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault()
+                      const value = e.currentTarget.value.trim()
+
+                      if (!value) return
+
+                      const existing = form.getValues("tags") ?? []
+
+                      if (!existing.includes(value)) {
+                        form.setValue("tags", [...existing, value])
+                      }
+
+                      e.currentTarget.value = ""
+                    }
+                  }}
+                />
+              </div>
+            </div>
+            {/* Prerequisites */}
+            <div className="space-y-2">
+              <Label>Prerequisites {(form.watch("prerequisites")?.length ?? 0) > 0 && <span className="text-xs text-muted-foreground">({form.watch("prerequisites")?.length ?? 0})</span>}</Label>
+              <p className="text-xs text-muted-foreground">
+                List requirements students should have before taking this course. Type and press Enter.
+              </p>
+
+              <div className="flex flex-wrap gap-2 border rounded-lg p-3 bg-slate-50">
+                {/* Display existing prerequisites */}
+                {(form.watch("prerequisites")?.length ?? 0) > 0 ? (
+                  (form.watch("prerequisites") ?? []).map((item, index) => (
+                    <span
+                      key={index}
+                      className="flex items-center gap-2 bg-amber-100 text-amber-700 px-3 py-1 rounded-lg text-sm font-medium"
+                    >
+                      {item}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = (form.getValues("prerequisites") ?? [])
+                            .filter((_, i) => i !== index)
+                          form.setValue("prerequisites", updated)
+                        }}
+                        className="text-amber-600 hover:text-red-600 font-bold"
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  ))
+                ) : (
+                  <p className="text-xs text-muted-foreground py-2">No prerequisites set</p>
+                )}
+
+                {/* Input for new prerequisites */}
+                <Input
+                  type="text"
+                  placeholder="Add a prerequisite..."
+                  className="border-none focus-visible:ring-0 shadow-none px-2 py-1 flex-1 min-w-[150px] bg-transparent"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault()
+                      const value = e.currentTarget.value.trim()
+
+                      if (!value) return
+
+                      const existing = form.getValues("prerequisites") ?? []
+
+                      if (!existing.includes(value)) {
+                        form.setValue("prerequisites", [...existing, value])
+                      }
+
+                      e.currentTarget.value = ""
+                    }
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Price + Duration */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label>Price (₹)</Label>
                 <Input
                   type="number"
-                  className="rounded-xl"
-                  {...form.register("price")}
+                  {...form.register("price", { valueAsNumber: true })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Duration (minutes)</Label>
+                <Input
+                  type="number"
+                  {...form.register("duration", { valueAsNumber: true })}
                 />
               </div>
             </div>
 
-            {/* Duration */}
+            {/* OLD IMAGE PREVIEW */}
             <div className="space-y-2">
-              <Label>Duration (minutes)</Label>
-              <Input
-                type="number"
-                className="rounded-xl"
-                {...form.register("duration")}
-              />
-            </div>
+              <Label>Current Image</Label>
 
-            <Controller
-              control={form.control}
-              name="thumbnail"
-              render={({ field }) => (
-                <ThumbnailUpload
-                  value={field.value}
-                  onChange={field.onChange}
-                />
+              {thumbnailUrl ? (
+                <div className="overflow-hidden rounded-2xl border">
+                  <img
+                    src={thumbnailUrl}
+                    alt="Current category"
+                    className="w-full h-52 object-cover"
+                  />
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No image uploaded yet.
+                </p>
               )}
-            />
+            </div>
+            {/* Thumbnail Upload */}
+            <div className="space-y-2">
+              <Label>Upload New Thumbnail (Optional)</Label>
+
+              <Controller
+                control={form.control}
+                name="thumbnailFile"
+                render={({ field }) => (
+                  <ThumbnailUpload
+                    value={field.value}
+                    onChange={(file) => field.onChange(file)}
+                  />
+                )}
+              />
+              {form.formState.errors.thumbnailFile && (
+                <p className="text-sm text-red-500">
+                  {form.formState.errors.thumbnailFile.message as string}
+                </p>
+              )}
+            </div>
 
             {/* Publish */}
             <div className="flex items-center justify-between rounded-2xl border p-4">
@@ -326,6 +486,6 @@ export default function EditCoursePage() {
           </form>
         </CardContent>
       </Card>
-    </div>
+    </div >
   )
 }

@@ -7,7 +7,55 @@ import { createCategoryApiSchema } from "@/schemas/categorySchema"
 import { savePublicUpload } from "@/lib/uploadFile"
 import { cookies } from "next/headers"
 
-export async function GET(req: NextRequest) {
+
+// export async function GET(req: NextRequest) {
+//   try {
+//     await connectDb()
+//     // const cookieStore = await cookies()
+//     // const accessToken = cookieStore.get("accessToken")
+//     //  console.log("hi",accessToken);
+//     // if (!accessToken) {
+//     //   return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+//     // }
+
+//     const page = Number(req.nextUrl.searchParams.get("page") || "1")
+//     const limit = Number(req.nextUrl.searchParams.get("limit") || "10")
+//     const search = req.nextUrl.searchParams.get("search") || ""
+//     const sort = req.nextUrl.searchParams.get("sort") || "latest"
+//     const filter = search
+//       ? {
+//         $or: [
+//           { name: { $regex: search, $options: "i" } },
+//           { slug: { $regex: search, $options: "i" } },
+//           { metaTitle: { $regex: search, $options: "i" } },
+//         ],
+//       }
+//       : {}
+//     let sortQuery: any = { createdAt: -1 }
+
+//     if (sort === "oldest") sortQuery = { createdAt: 1 }
+//     if (sort === "name_asc") sortQuery = { name: 1 }
+//     if (sort === "name_desc") sortQuery = { name: -1 }
+//     const total = await Category.countDocuments(filter)
+
+//     const categories = await Category.find(filter)
+//       .sort(sortQuery)
+//       .skip((page - 1) * limit)
+//       .limit(limit)
+//     return NextResponse.json(
+//       { success: true, categories, total, page, limit },
+//       { status: 200 }
+//     )
+//   } catch (error) {
+//     console.log("GET CATEGORIES ERROR:", error)
+//     return NextResponse.json(
+//       { success: false, message: "Internal Server Error" },
+//       { status: 500 }
+//     )
+//   }
+// }
+
+export async function GET(req: Request) {
   try {
     await connectDb()
     const cookieStore = await cookies()
@@ -16,39 +64,18 @@ export async function GET(req: NextRequest) {
     if (!accessToken) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
+    const categories = await Category.find({})
+      .select("_id name slug")
+      .sort({ createdAt: -1 })
+      .lean()
 
-    const page = Number(req.nextUrl.searchParams.get("page") || "1")
-    const limit = Number(req.nextUrl.searchParams.get("limit") || "10")
-    const search = req.nextUrl.searchParams.get("search") || ""
-    const sort = req.nextUrl.searchParams.get("sort") || "latest"
-    const filter = search
-      ? {
-        $or: [
-          { name: { $regex: search, $options: "i" } },
-          { slug: { $regex: search, $options: "i" } },
-          { metaTitle: { $regex: search, $options: "i" } },
-        ],
-      }
-      : {}
-    let sortQuery: any = { createdAt: -1 }
-
-    if (sort === "oldest") sortQuery = { createdAt: 1 }
-    if (sort === "name_asc") sortQuery = { name: 1 }
-    if (sort === "name_desc") sortQuery = { name: -1 }
-    const total = await Category.countDocuments(filter)
-
-    const categories = await Category.find(filter)
-      .sort(sortQuery)
-      .skip((page - 1) * limit)
-      .limit(limit)
     return NextResponse.json(
-      { success: true, categories, total, page, limit },
-      { status: 200 }
+      { success: true, message: "Category  found", data: categories },
+      { status: 201 }
     )
-  } catch (error) {
-    console.log("GET CATEGORIES ERROR:", error)
+  } catch {
     return NextResponse.json(
-      { success: false, message: "Internal Server Error" },
+      { success: true, message: "Category not found" },
       { status: 500 }
     )
   }

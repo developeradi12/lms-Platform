@@ -1,14 +1,14 @@
-import Category from "@/models/Category"
 import { Course } from "@/models/Course"
-import connectDb from "../db"
-import { NextResponse } from "next/server"
+import { AdminCourse, CourseSlug, CreateCourseDTO } from "@/types"
+import api from "../api"
+import Category from "@/models/Category"
 
 interface GetCoursesProps {
-    search: string
-    categories: string
-    price: string
-    skip: number
-    limit: number
+  search: string
+  categories: string
+  price: string
+  skip: number
+  limit: number
 }
 
 export async function getCourses({
@@ -57,3 +57,32 @@ export async function getCourses({
     Iske bina: Agar database mein "Python" likha hai aur user ne "python" (small p) search kiya, toh kuch nahi milega.
 "i" ke saath: User PYTHON, python, ya PyThOn kuch bhi likhe, result mil jayega.
 */
+
+
+export const courseService = {
+
+  getAll: async (): Promise<AdminCourse[]> => {
+    const res = await api.get<{ courses: AdminCourse[] }>("/api/admin/courses")
+    return res.data?.courses || []
+  },
+
+  deleteBySlug: async (slug: CourseSlug["slug"]) => {
+    await api.delete(`/api/admin/courses/${slug}`)
+  },
+  
+  createCourse: async (formData: FormData): Promise<CreateCourseDTO> => {
+    const res = await api.post<{ course: CreateCourseDTO}>("/api/admin/courses",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      })
+      return  res.data.course;
+  },
+
+  getBySlug:async(slug:CourseSlug["slug"])=>{
+  const res =  await api.get(`api/admin/courses/${slug}`)
+    return res.data?.course;
+  },
+}

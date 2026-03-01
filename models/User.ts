@@ -57,7 +57,7 @@ const UserSchema = new Schema(
     refreshToken: {
       type: String,
       default: "",
-      select: false,
+      select: true,
     },
 
     wishlist: [

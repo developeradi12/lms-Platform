@@ -1,10 +1,10 @@
 import { generateUniqueSlug } from "@/lib/generateUniqueSlug";
-import  {Category as CategoryType}  from "@/schemas/categorySchema";
-import  { Schema, model, models } from "mongoose"
+import { CategoryDocument } from "@/types/db";
+import  mongoose, { Schema, model, models } from "mongoose"
 import slugify from "slugify"
 
 
-const CategorySchema = new Schema<CategoryType>(
+const CategorySchema = new Schema<CategoryDocument>(
   {
     name: {
       type: String,
@@ -95,7 +95,5 @@ CategorySchema.pre("findOneAndUpdate", async function (next) {
   next();
 });
 
- const Category =
-  models.Category || model<CategoryType>("Category", CategorySchema);
-
-export default Category;
+export default mongoose.models.Category ||
+  mongoose.model<CategoryDocument>("Category", CategorySchema);

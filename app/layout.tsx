@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next"
 import { Inter, Space_Grotesk } from "next/font/google"
 import "./globals.css"
 import { Toaster } from "sonner"
+import AuthProvider from "@/lib/AuthProvider"
 
 const _inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
 const _spaceGrotesk = Space_Grotesk({
@@ -33,7 +34,10 @@ export default async function RootLayout({
         <div className="min-h-screen flex flex-col">
           {/* Page Content */}
           <main className="flex-1">
-            {children}
+            <AuthProvider>
+              {children}
+            </AuthProvider>
+
           </main>
         </div>
 

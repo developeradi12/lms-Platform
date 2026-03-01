@@ -7,12 +7,10 @@ import { CircleUser, GraduationCap, LayoutDashboard, Menu, X } from "lucide-reac
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 
-type User = {
-  _id: string
-  name: string
-  email: string
-  role: "ADMIN" | "INSTRUCTOR" | "STUDENT"
+type Props = {
+  role?: string | null;
 }
+
 const navLinks = [
   { label: "Home", href: "/" },
   { label: "Courses", href: "/courses" },
@@ -20,27 +18,15 @@ const navLinks = [
   { label: "Contact-us", href: "/contact" }
 ]
 
-export function PublicNav() {
-  const [user, setUser] = useState<User | null>(null)
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await api.get<User>("/api/auth/me")
-        setUser(res.data)
-      } catch {
-        setUser(null)
-      }
-    }
-
-    fetchUser()
-  }, [])
+export function PublicNav({ role }: Props) {
 
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
   const dashboardRoute = useMemo(() => {
-    if (!user) return "/login"
 
-    switch (user.role) {
+    if (!role) return "/login"
+
+    switch (role) {
       case "ADMIN":
         return "/admin/dashboard"
       case "INSTRUCTOR":
@@ -48,7 +34,7 @@ export function PublicNav() {
       default:
         return "/dashboard"
     }
-  }, [user])
+  }, [role])
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md">
@@ -87,7 +73,7 @@ export function PublicNav() {
 
         {/* Desktop CTA */}
         <div className="hidden items-center gap-3 md:flex">
-          {user ? (
+          {role ? (
             <Button
               variant="ghost"
               size="icon"
@@ -144,19 +130,16 @@ export function PublicNav() {
               )
             })}
             <div className="flex flex-col gap-2 pt-2">
-              <Button variant="ghost" size="icon" asChild>
-                <Link href={dashboardRoute}>
-                  {user ? (
-                    <LayoutDashboard className="size-5" />
-                  ) : (
-                    "Log in"
-                  )}
-                </Link>
-              </Button>
-
-              {!user && (
-                <Button variant="outline" asChild>
-                  <Link href="/sign_up">Sign up</Link>
+              {role ? (
+                <Button variant="ghost" size="icon" asChild>
+                  <Link href={dashboardRoute}>
+                    <LayoutDashboard className="mr-2 size-4" />
+                    Dashboard
+                  </Link>
+                </Button>
+              ) : (
+                <Button variant="ghost" asChild>
+                  <Link href="/login">Log in</Link>
                 </Button>
               )}
             </div>

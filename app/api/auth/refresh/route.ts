@@ -14,14 +14,18 @@ export async function POST() {
     const refreshToken = cookieStore.get("refreshToken")?.value
 
     if (!refreshToken) {
-      return logoutResponse()
+      return NextResponse.json(
+        { success: false, message: "No refresh token provided" },
+        { status: 401 }
+      );
     }
     const payload = await verifyRefreshToken(refreshToken)
-    console.log("payload", payload);
-    const user = await User.findById(payload.userId)
-
+    const user = await User.findById(payload.userId).select("+refreshToken");
     if (!user || user.refreshToken !== refreshToken) {
-      return logoutResponse()
+      return NextResponse.json(
+        { success: false, message: "Invalid session" },
+        { status: 403 }
+      );
     }
 
     // Generate new access token
@@ -34,30 +38,20 @@ export async function POST() {
     const res = NextResponse.json({ success: true })
 
     res.cookies.set("accessToken", newAccessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      httpOnly: true, // Protects from XSS attacks
+      secure: process.env.NODE_ENV === "production",  //Cookie will be sent ONLY over HTTPS
+      sameSite: "strict", //This prevents CSRF attacks.
       path: "/",
-      maxAge: 60 * 2,
+      maxAge: 60 * 15,
     })
 
     return res
   } catch {
-    return logoutResponse()
+    return (
+      NextResponse.json(
+        { success: false, message: "Session expired" },
+        { status: 401 }
+      )
+    )
   }
-}
-
-/**
- * 🔥 Logout Helper
- */
-function logoutResponse() {
-  const res = NextResponse.json(
-    { success: false, message: "Session expired" },
-    { status: 401 }
-  )
-
-  res.cookies.set("accessToken", "", { maxAge: 0, path: "/" })
-  res.cookies.set("refreshToken", "", { maxAge: 0, path: "/" })
-
-  return res
 }

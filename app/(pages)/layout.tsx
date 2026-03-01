@@ -1,18 +1,22 @@
 import { getAuthUser } from "@/lib/getAuthUser"
 import { PublicNav } from "@/components/public-nav"
 import { PublicFooter } from "@/components/public-footer"
+import connectDb from "@/lib/db";
+import { getSession } from "@/utils/session";
 
 export default async function PagesLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const user = await getAuthUser().catch(() => null)
+  await connectDb();
+  const session = await getSession();
+  const role = session?.role || null;
 
   return (
     <div className="min-h-screen flex flex-col">
       {/* Navbar */}
-      <PublicNav user={user} />
+      <PublicNav role={role} />
 
       {/* Page Content */}
       <main className="flex-1">

@@ -20,13 +20,18 @@ import { toast } from "sonner"
 import { Controller } from "react-hook-form";
 import ThumbnailUpload from "@/components/Upload"
 import api from "@/lib/api"
-import {CreateCategoryFormValues, createCategoryFormSchema } from "@/schemas/categorySchema"
+import { CreateCategoryForm } from "@/types"
+import { createCategoryFormSchema } from "@/schemas/categorySchema"
 
 export default function CreateCategoryPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 
-  const form = useForm<CreateCategoryFormValues>({
+  /*note Zod still validates ✔
+Schema → runtime validation
+DTO → compile time safety */
+
+  const form =useForm<CreateCategoryForm>({
     resolver: zodResolver(createCategoryFormSchema),
     defaultValues: {
       name: "",
@@ -37,13 +42,13 @@ export default function CreateCategoryPage() {
     },
   })
 
-  const onSubmit = async (values: CreateCategoryFormValues) => {
+  const onSubmit = async (values: CreateCategoryForm) => {
     console.log("FORM VALUES:", values)
     try {
       setLoading(true)
       console.log("values", values);
       const formData = new FormData();
-      if(values.name) formData.append("name", values.name)
+      if (values.name) formData.append("name", values.name)
       if (values.description) formData.append("description", values.description)
       if (values.metaTitle) formData.append("metaTitle", values.metaTitle)
       if (values.metaDescription) formData.append("metaDescription", values.metaDescription)

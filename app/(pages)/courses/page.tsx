@@ -6,8 +6,11 @@ import "@/models/User"
 import SearchInput from "./_components/SearchInput"
 import Filters from "./_components/filters"
 
-import { getAllCategories } from "@/lib/service/category"
+import { categoryService } from "@/lib/service/category"
 import { getCourses } from "@/lib/service/course"
+import Category from "@/models/Category"
+import { PublicCategory } from "@/types"
+import { CategoryDocument } from "@/types/db"
 
 interface Props {
   searchParams: Promise<{
@@ -30,7 +33,17 @@ export default async function CoursesPage({ searchParams }: Props) {
   const categoriesQuery = params.categories || ""
   const price = params.price || ""
 
-  const categories = await getAllCategories();
+const categories: PublicCategory[] = (
+  await Category.find().lean<CategoryDocument[]>()
+).map(cat => ({
+  _id: String(cat._id),
+  name: cat.name,
+  description: cat.description,
+  image: cat.image,
+  slug: cat.slug,
+  createdAt: cat.createdAt.toISOString(),
+  updatedAt: cat.updatedAt.toISOString(),
+}))
 
   // Fetch courses and total count in parallel
   const { total, courses } = await getCourses({ search, categories: categoriesQuery, price, skip, limit })
@@ -39,7 +52,7 @@ export default async function CoursesPage({ searchParams }: Props) {
 
   return (
     <>
-     
+
       <div className="min-h-screen bg-background">
 
         {/* ---------------- HEADER SECTION ---------------- */}
@@ -130,7 +143,7 @@ export default async function CoursesPage({ searchParams }: Props) {
 
         </div>
       </div>
-    
+
     </>
   )
 }

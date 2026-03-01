@@ -22,6 +22,8 @@ import { formatDuration } from "@/utils/formatDuration"
 import { PublicNav } from "@/components/public-nav"
 import { PublicFooter } from "@/components/public-footer"
 import Reveal from "@/components/animations/Reveal"
+import { getSession } from "@/utils/session"
+import { serializeHomeCourse } from "@/lib/serializers"
 
 const features = [
   {
@@ -83,17 +85,29 @@ const stats = [
 
 export default async function HomePage() {
   await connectDb();
+  const session = await getSession();
+  const role = session?.role || null;
+
   const courses = await Course.find({ isPublished: true })
-    .populate("categories", "name")
-    .populate("instructor", "name")
+    .populate({
+      path: "categories",
+      select: "name",
+      options: { lean: true }
+    })
+    .populate({
+      path: "instructor",
+      select: "name",
+      options: { lean: true }
+    })
     .sort({ createdAt: -1 })
     .lean()
-  const popularCourses = courses.slice(0, 4)
+  const safeCourses = courses.map(serializeHomeCourse)
+  const popularCourses = safeCourses.slice(0, 4)
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Navbar */}
-      <PublicNav/>
+      <PublicNav role={role} />
       <main className="flex-1">
         {/* Hero Section */}
         <section className="relative overflow-hidden">
@@ -253,164 +267,164 @@ export default async function HomePage() {
             </div>
           </section>
         </Reveal>
-        
+
         {/* Popular Courses */}
-         <Reveal delay={100}>
-        <section className="bg-secondary/30">
-          <div className="mx-auto max-w-7xl px-6 py-20 md:py-28">
-            <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-end">
-              <div>
-                <h2 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl font-[family-name:var(--font-heading)] text-balance">
-                  Popular courses
-                </h2>
-                <p className="mt-3 text-lg text-muted-foreground">
-                  Start learning from our most enrolled courses today.
-                </p>
+        <Reveal delay={100}>
+          <section className="bg-secondary/30">
+            <div className="mx-auto max-w-7xl px-6 py-20 md:py-28">
+              <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-end">
+                <div>
+                  <h2 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl font-[family-name:var(--font-heading)] text-balance">
+                    Popular courses
+                  </h2>
+                  <p className="mt-3 text-lg text-muted-foreground">
+                    Start learning from our most enrolled courses today.
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  className="border-border text-foreground hover:bg-card"
+                  asChild
+                >
+                  <Link href="/courses">
+                    View All Courses
+                    <ArrowRight className="ml-2 size-4" />
+                  </Link>
+                </Button>
               </div>
-              <Button
-                variant="outline"
-                className="border-border text-foreground hover:bg-card"
-                asChild
-              >
-                <Link href="/courses">
-                  View All Courses
-                  <ArrowRight className="ml-2 size-4" />
-                </Link>
-              </Button>
-            </div>
-            <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {popularCourses.map((course) => (
-                <Link key={course._id} href={`/courses/${course.slug}`}>
-                  <Card className="group overflow-hidden p-0 border-border bg-card hover:shadow-lg hover:-translate-y-1 transition-all h-full flex flex-col">
-                    <div className="relative aspect-video  w-full overflow-hidden">
-                      <Image
-                        src={course.thumbnail}
-                        alt={course.title}
-                        fill
-                        className="object-cover transition-transform group-hover:scale-105"
-                      />
-                      <Badge className="absolute top-3 left-3 bg-primary text-primary-foreground">
-                        {course.level}
-                      </Badge>
-                    </div>
-                    <CardContent className="flex flex-1 flex-col gap-2 p-4">
-                      <p className="text-xs font-medium text-primary">
-                        {course.categories?.map((cat) => cat.name).join(", ")}
-                      </p>
-                      <h3 className="text-sm font-semibold text-card-foreground line-clamp-2 font-[family-name:var(--font-heading)] group-hover:text-primary transition-colors">
-                        {course.title}
-                      </h3>
-                      <p className="mt-auto text-xs text-muted-foreground">
-                        {course.instructor?.name}
-                      </p>
-                      <p className="mt-auto text-xs text-muted-foreground">
-                        ₹{course.price}
-                      </p>
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Star className="size-3 fill-chart-3 text-chart-3" />
-                          {course.averageRating}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="size-3" />
-                          {formatDuration(course.duration)}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Users className="size-3" />
-                          {/* {course.enrolled.toLocaleString()} */}
-                        </span>
+              <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                {popularCourses.map((course) => (
+                  <Link key={course._id} href={`/courses/${course.slug}`}>
+                    <Card className="group overflow-hidden p-0 border-border bg-card hover:shadow-lg hover:-translate-y-1 transition-all h-full flex flex-col">
+                      <div className="relative aspect-video  w-full overflow-hidden">
+                        <Image
+                          src={course.thumbnail}
+                          alt={course.title}
+                          fill
+                          className="object-cover transition-transform group-hover:scale-105"
+                        />
+                        <Badge className="absolute top-3 left-3 bg-primary text-primary-foreground">
+                          {course.level}
+                        </Badge>
                       </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
+                      <CardContent className="flex flex-1 flex-col gap-2 p-4">
+                        <p className="text-xs font-medium text-primary">
+                          {course.categories?.map((cat) => cat.name).join(", ")}
+                        </p>
+                        <h3 className="text-sm font-semibold text-card-foreground line-clamp-2 font-[family-name:var(--font-heading)] group-hover:text-primary transition-colors">
+                          {course.title}
+                        </h3>
+                        <p className="mt-auto text-xs text-muted-foreground">
+                          {course.instructor?.name}
+                        </p>
+                        <p className="mt-auto text-xs text-muted-foreground">
+                          ₹{course.price}
+                        </p>
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Star className="size-3 fill-chart-3 text-chart-3" />
+                            {course.averageRating}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="size-3" />
+                            {formatDuration(course.duration)}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Users className="size-3" />
+                            {/* {course.enrolled.toLocaleString()} */}
+                          </span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
         </Reveal>
 
         {/* Testimonials */}
-         <Reveal delay={100}>
-        <section className="mx-auto max-w-7xl px-6 py-20 md:py-28">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl font-[family-name:var(--font-heading)] text-balance">
-              Loved by learners worldwide
-            </h2>
-            <p className="mt-4 text-lg text-muted-foreground">
-              See what our students have to say about their learning experience.
-            </p>
-          </div>
-          <div className="mt-16 grid grid-cols-1 gap-6 md:grid-cols-3">
-            {testimonials.map((t) => (
-              <Card
-                key={t.name}
-                className="border-border bg-card"
-              >
-                <CardContent className="flex flex-col gap-4 p-6">
-                  <div className="flex items-center gap-1">
-                    {[1, 2, 3, 4, 5].map((i) => (
-                      <Star
-                        key={i}
-                        className="size-4 fill-chart-3 text-chart-3"
-                      />
-                    ))}
-                  </div>
-                  <p className="text-sm text-card-foreground leading-relaxed">
-                    &ldquo;{t.quote}&rdquo;
-                  </p>
-                  <div className="flex items-center gap-3 pt-2">
-                    <div className="flex size-10 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
-                      {t.avatar}
+        <Reveal delay={100}>
+          <section className="mx-auto max-w-7xl px-6 py-20 md:py-28">
+            <div className="mx-auto max-w-2xl text-center">
+              <h2 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl font-[family-name:var(--font-heading)] text-balance">
+                Loved by learners worldwide
+              </h2>
+              <p className="mt-4 text-lg text-muted-foreground">
+                See what our students have to say about their learning experience.
+              </p>
+            </div>
+            <div className="mt-16 grid grid-cols-1 gap-6 md:grid-cols-3">
+              {testimonials.map((t) => (
+                <Card
+                  key={t.name}
+                  className="border-border bg-card"
+                >
+                  <CardContent className="flex flex-col gap-4 p-6">
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((i) => (
+                        <Star
+                          key={i}
+                          className="size-4 fill-chart-3 text-chart-3"
+                        />
+                      ))}
                     </div>
-                    <div>
-                      <p className="text-sm font-semibold text-card-foreground">
-                        {t.name}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {t.role}
-                      </p>
+                    <p className="text-sm text-card-foreground leading-relaxed">
+                      &ldquo;{t.quote}&rdquo;
+                    </p>
+                    <div className="flex items-center gap-3 pt-2">
+                      <div className="flex size-10 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+                        {t.avatar}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-card-foreground">
+                          {t.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {t.role}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </section>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
         </Reveal>
 
         {/* CTA */}
-         <Reveal delay={100}>
-        <section className="bg-primary">
-          <div className="mx-auto max-w-7xl px-6 py-20 text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-primary-foreground md:text-4xl font-[family-name:var(--font-heading)] text-balance">
-              Ready to start your learning journey?
-            </h2>
-            <p className="mx-auto mt-4 max-w-lg text-lg text-primary-foreground/80 leading-relaxed">
-              Join over 50,000 learners already building skills and advancing
-              their careers with LearnHub.
-            </p>
-            <div className="mt-8 flex flex-wrap justify-center gap-3">
-              <Button
-                size="lg"
-                className="bg-background text-foreground hover:bg-background/90"
-                asChild
-              >
-                <Link href="/courses">
-                  Get Started Free
-                  <ArrowRight className="ml-2 size-4" />
-                </Link>
-              </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                className="border-primary-foreground/30 text-gray-400 hover:bg-primary-foreground/10 hover:text-primary-foreground"
-                asChild
-              >
-                <Link href="/courses">Browse Courses</Link>
-              </Button>
+        <Reveal delay={100}>
+          <section className="bg-primary">
+            <div className="mx-auto max-w-7xl px-6 py-20 text-center">
+              <h2 className="text-3xl font-bold tracking-tight text-primary-foreground md:text-4xl font-[family-name:var(--font-heading)] text-balance">
+                Ready to start your learning journey?
+              </h2>
+              <p className="mx-auto mt-4 max-w-lg text-lg text-primary-foreground/80 leading-relaxed">
+                Join over 50,000 learners already building skills and advancing
+                their careers with LearnHub.
+              </p>
+              <div className="mt-8 flex flex-wrap justify-center gap-3">
+                <Button
+                  size="lg"
+                  className="bg-background text-foreground hover:bg-background/90"
+                  asChild
+                >
+                  <Link href="/courses">
+                    Get Started Free
+                    <ArrowRight className="ml-2 size-4" />
+                  </Link>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="border-primary-foreground/30 text-gray-400 hover:bg-primary-foreground/10 hover:text-primary-foreground"
+                  asChild
+                >
+                  <Link href="/courses">Browse Courses</Link>
+                </Button>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
         </Reveal>
       </main>
       {/* Footer */}
