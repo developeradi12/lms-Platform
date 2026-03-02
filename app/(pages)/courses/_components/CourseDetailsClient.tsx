@@ -15,16 +15,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Lock, PlayCircle } from "lucide-react"
 import { toYoutubeEmbed } from "@/lib/getYoutube"
 import { useRouter } from "next/navigation"
-import type { Course } from "@/types/course"
-import { Lesson } from "@/types/lesson"
+
 import { toast } from "sonner"
 import api from "@/lib/api"
 import Link from "next/link"
 import { reviews } from "@/lib/data/reviews"
 import Reveal from "@/components/animations/Reveal"
+import { CourseDetailsSerialized, LessonSerialized } from "@/types"
+
 
 interface Props {
-  course: Course
+  course: CourseDetailsSerialized
   isEnrolled?: boolean
   isWishlisted?: boolean
   isLoggedIn?: boolean
@@ -35,14 +36,13 @@ export default function CourseDetailsClient({ course, isEnrolled = false, isWish
   const isFree = course.price === 0
 
   const [open, setOpen] = useState(false)
-  const [activeLesson, setActiveLesson] = useState<Lesson | null>(null)
+  const [activeLesson, setActiveLesson] = useState<LessonSerialized | null>(null)
   const [isInWishlist, setIsInWishlist] = useState(isWishlisted)
   const [loading, setLoading] = useState(false)
 
 
   const instructorName =
     course.instructor?.name ||
-    `${course.instructor?.firstName || ""} ${course.instructor?.lastName || ""}`.trim() ||
     "Instructor"
 
   const totalChapters = course.chapters?.length || 0
@@ -55,7 +55,7 @@ export default function CourseDetailsClient({ course, isEnrolled = false, isWish
     return toYoutubeEmbed(activeLesson.videoUrl)
   }, [activeLesson])
 
-  function handleWatch(lesson: Lesson) {
+  function handleWatch(lesson: LessonSerialized) {
     const canAccess = isFree || isEnrolled || lesson.isFreePreview
     if (!canAccess) return
     setActiveLesson(lesson)
@@ -74,6 +74,37 @@ export default function CourseDetailsClient({ course, isEnrolled = false, isWish
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleEnroll = async () => {
+    if (!isLoggedIn) {
+      router.push(`/login?redirect=/courses/${course.slug}`)
+      return
+    }
+
+    // FREE COURSE → Direct enroll
+    if (isFree) {
+      try {
+        setLoading(true)
+
+        await api.post("/api/user/enroll", {
+          slug: course.slug
+        })
+
+        toast.success("Enrolled successfully 🎉")
+
+        router.push(`/cou`)
+      } catch (err) {
+        toast.error("Enrollment failed")
+      } finally {
+        setLoading(false)
+      }
+
+      return
+    }
+
+    // PAID COURSE → Checkout
+    router.push(`/checkout/${course.slug}`)
   }
 
   return (
@@ -100,7 +131,7 @@ export default function CourseDetailsClient({ course, isEnrolled = false, isWish
 
             <div className="flex gap-6 text-sm text-muted-foreground">
               <span>⭐ {course.averageRating || 4.8}</span>
-              <span>👥 {course.enrolledCount || 0}</span>
+              <span>👥 {course.totalEnrollments || 0}</span>
               <span>📚 {totalLessons}</span>
               <span>⏱ {totalDuration} min</span>
             </div>
@@ -123,17 +154,14 @@ export default function CourseDetailsClient({ course, isEnrolled = false, isWish
               <Button
                 size="lg"
                 className="w-full"
+
                 onClick={() => {
-                  if (!isLoggedIn) {
-                    router.push(`/login?redirect=/courses/${course.slug}`)
-                    return
+                  if (isEnrolled) {
+                    router.push(`/learn/${course.slug}`)
+                  } else {
+                    handleEnroll()
                   }
 
-                  if (isEnrolled) {
-                    router.push(`/courses/${course.slug}/learn`)
-                  } else {
-                    router.push(`/checkout/${course.slug}`)
-                  }
                 }}
               >
                 {!isLoggedIn
@@ -190,42 +218,95 @@ export default function CourseDetailsClient({ course, isEnrolled = false, isWish
             </CardContent>
           </Card>
         </div>
-      </section>
+      </section >
 
       {/* CURRICULUM */}
-      <Reveal delay={100}>
+      < Reveal delay={100} >
         <section className={"max-w-7xl mx-auto px-6 py-16"}>
           <h2 className="text-2xl font-bold mb-8">Course Content</h2>
           <p className="text-sm text-muted-foreground mb-8"> {totalChapters} chapters • {totalLessons} lessons </p>
           <div className="space-y-4">
             {course.chapters.map((chapter, ci) => (
-              <Accordion type="single" collapsible key={chapter._id}>
-                <AccordionItem value={chapter._id}>
-                  <AccordionTrigger>{ci + 1}. {chapter.title}</AccordionTrigger>
-                  <AccordionContent>
-                    {chapter.lessons.map((lesson, li) => {
-                      const canAccess = isFree || isEnrolled || lesson.isFreePreview
-                      return (
-                        <div key={lesson._id} className="flex justify-between bg-muted/40 rounded-lg px-4 py-3 mb-2">
-                          <p>{ci + 1}.{li + 1} {lesson.title}</p>
-                          {canAccess ? (
-                            <Button size="sm" onClick={() => handleWatch(lesson)}>
-                              <PlayCircle className="w-4 h-4 mr-1" /> Watch
-                            </Button>
-                          ) : <Lock className="w-4 h-4" />}
-                        </div>
-                      )
-                    })}
+              <Accordion key={chapter._id} type="single" collapsible>
+
+                <AccordionItem
+                  value={chapter._id}
+                  className="border rounded-2xl bg-background shadow-sm transition-all duration-300 hover:shadow-md"
+                >
+
+                  {/* HEADER */}
+                  <AccordionTrigger className="px-6 py-5 hover:no-underline">
+                    <div className="flex items-center gap-4 w-full">
+
+                      {/* Number Circle */}
+                      <div className="w-10 h-10 flex items-center justify-center rounded-full bg-muted text-primary font-semibold">
+                        {ci + 1}
+                      </div>
+
+                      {/* Title + Meta */}
+                      <div className="flex flex-col text-left flex-1">
+                        <span className="font-medium text-base">
+                          {chapter.title}
+                        </span>
+
+                        <span className="text-sm text-muted-foreground">
+                          {chapter.lessons.length} lessons •{" "}
+                          {chapter.lessons.reduce((a, l) => a + l.duration, 0)}m total
+                        </span>
+                      </div>
+
+                    </div>
+                  </AccordionTrigger>
+
+                  {/* CONTENT */}
+                  <AccordionContent className="px-6 pb-6 animate-fadeIn">
+                    <div className="space-y-3 pt-2">
+
+                      {chapter.lessons.map((lesson, li) => {
+                        const canAccess = isFree || isEnrolled || lesson.isFreePreview
+
+                        return (
+                          <div
+                            key={lesson._id}
+                            className="flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-3 transition hover:bg-muted"
+                          >
+                            <div>
+                              <p className="text-sm font-medium">
+                                {ci + 1}.{li + 1} {lesson.title}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {lesson.duration} min
+                              </p>
+                            </div>
+
+                            {canAccess ? (
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => handleWatch(lesson)}
+                              >
+                                <PlayCircle className="w-4 h-4 mr-1" />
+                                Watch
+                              </Button>
+                            ) : (
+                              <Lock className="w-4 h-4 text-muted-foreground" />
+                            )}
+                          </div>
+                        )
+                      })}
+
+                    </div>
                   </AccordionContent>
+
                 </AccordionItem>
               </Accordion>
             ))}
           </div>
         </section>
-      </Reveal>
+      </Reveal >
 
       {/* INSTRUCTOR */}
-      <Reveal delay={100}>
+      < Reveal delay={100} >
         <section className={`max-w-7xl mx-auto px-6 py-16 border-t }`}>
           <h2 className="text-2xl font-bold mb-6">Instructor</h2>
           <div className="flex items-start gap-4">
@@ -239,9 +320,9 @@ export default function CourseDetailsClient({ course, isEnrolled = false, isWish
             </div>
           </div>
         </section>
-      </Reveal>
+      </Reveal >
       {/* REVIEWS */}
-      <Reveal delay={100}>
+      < Reveal delay={100} >
         <section className={"max-w-7xl mx-auto px-6 py-20 border-t"}>
           <h2 className="text-2xl font-bold mb-10">Student Reviews</h2>
 
@@ -271,7 +352,29 @@ export default function CourseDetailsClient({ course, isEnrolled = false, isWish
             ))}
           </div>
         </section>
-      </Reveal>
-    </div>
+      </Reveal >
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-4xl p-0 overflow-hidden">
+          <DialogHeader className="p-4 border-b">
+            <DialogTitle>{activeLesson?.title}</DialogTitle>
+          </DialogHeader>
+
+          {embedUrl ? (
+            <div className="aspect-video">
+              <iframe
+                src={embedUrl}
+                title={activeLesson?.title}
+                className="w-full h-full"
+                allowFullScreen
+              />
+            </div>
+          ) : (
+            <div className="p-10 text-center text-muted-foreground">
+              No video available
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div >
   )
 }

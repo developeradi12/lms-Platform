@@ -1,15 +1,9 @@
-import { HomeCourse } from "@/types";
+import { CategorySerialized, CourseDetailsSerialized, CourseSerialized } from "@/types";
 import { buildSerializer } from "./builder";
 
-export const serializeHomeCourse = buildSerializer<HomeCourse>([
-  "_id",
-  "title",
-  "slug",
-  "thumbnail",
-  "price",
-  "averageRating",
-  "duration",
-  "level",
-  "instructor",
-  "categories"
-])
+// course
+export const serializeCourse = buildSerializer<CourseSerialized>([])
+export const serializeCourseDetails = buildSerializer<CourseDetailsSerialized>()
+
+//category
+export const serializeCategory = buildSerializer<CategorySerialized>()

@@ -1,35 +1,13 @@
-import { Types } from "mongoose"
+import { LessonSerialized } from "./lesson"
 
-export interface BaseChapter {
+export type ChapterSerialized = {
   _id: string
   title: string
   description?: string
-
   metaTitle?: string
   metaDescription?: string
+  slug?: string
+  order?: number
 
-  course: Types.ObjectId
-  lessons: Types.ObjectId[]
-
-  slug: string
-  order: number
-
-  createdAt: Date
-  updatedAt: Date
+  lessons:LessonSerialized[]
 }
-
-export type LeanChapter = Omit<BaseChapter,"course" | "lessons"> & {
-  course: string
-  lessons: string[]
-}
-
-export type PublicChapter = Omit<LeanChapter,"metaTitle" | "metaDescription">
-export type ChapterPreview = Pick<LeanChapter,"_id" | "title" | "slug" | "order">
-
-export type ChapterWithLessons<TLesson> =Omit<LeanChapter, "lessons"> & {lessons: TLesson[]}
-
-export type ChapterWithCourse<TCourse>=Omit<LeanChapter, "course"> & {course: TCourse}
-export type ChapterSEO = Pick<LeanChapter,"metaTitle" | "metaDescription">
-export type CreateChapterDTO = Omit<BaseChapter,"_id" | "createdAt" | "updatedAt">
-export type UpdateChapterDTO = Partial<CreateChapterDTO>
-export type ChapterSlug = Pick<LeanChapter,"slug">

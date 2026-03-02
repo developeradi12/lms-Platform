@@ -1,6 +1,7 @@
 import { generateUniqueSlug } from "@/lib/generateUniqueSlug";
 import mongoose, { Schema, models } from "mongoose"
 import slugify from "slugify";
+import { boolean } from "zod";
 
 const LessonSchema = new Schema(
   {
@@ -27,7 +28,7 @@ const LessonSchema = new Schema(
       ref: "Chapter",
       required: true,
     },
-
+    isComplete: { type: boolean },
     videoUrl: { type: String, default: "" },
     duration: { type: Number, default: 0 },
     isFreePreview: { type: Boolean, default: false },

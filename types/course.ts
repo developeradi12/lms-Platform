@@ -1,26 +1,22 @@
-import { Types } from "mongoose"
-export type CourseLevel = "BEGINNER" | "INTERMEDIATE" | "ADVANCED"
-export type CourseStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED"
+import { LessonSerialized } from "./lesson"
 
-export interface BaseCourse {
+export type CourseSerialized = {
   _id: string
   title: string
   slug: string
   description: string
-  thumbnail?: string
+  thumbnail: string
 
-  instructor: Types.ObjectId
-  categories: Types.ObjectId[]
-  chapters: Types.ObjectId[]
+  instructor: string
+  categories: string[]
+  chapters: string[]
 
   price: number
   duration: number
-  level: CourseLevel
+  level: "BEGINNER" | "INTERMEDIATE" | "ADVANCED"
   isPublished: boolean
 
   totalLessons: number
-  totalChapters: number
-
   averageRating: number
   totalReviews: number
   totalEnrollments: number
@@ -31,62 +27,38 @@ export interface BaseCourse {
   metaTitle?: string
   metaDescription?: string
 
-  createdAt: Date
-  updatedAt: Date
-}
-
-export type AdminCourse = {
-  _id: string
-  slug: string
-  title: string
-  price: number
-  isPublished: boolean
-  chaptersCount?: number
   createdAt: string
-  category?: {
-    _id: string
-    name: string
-  }
+  updatedAt: string
 }
 
-export type LeanCourse = Omit<BaseCourse, "instructor" | "categories" | "chapters"> & {
-  instructor: string
-  categories: string[]
-  chapters: string[]
-}
-
-export type PublicCourse = Omit<LeanCourse, "metaTitle" | "metaDescription"
->
-//Instructor populated
-export type CourseWithInstructor<TInstructor> = Omit<LeanCourse, "instructor"> & { instructor: TInstructor }
-
-// Categories populated
-export type CourseWithCategories<TCategory> = Omit<LeanCourse, "categories"> & { categories: TCategory[] }
-
-//Chapters populated
-export type CourseWithChapters<TChapter> = Omit<LeanCourse, "chapters"> & { chapters: TChapter[] }
-
-export type CourseDetails<TInstructor, TCategory, TChapter> =
-  CourseWithInstructor<TInstructor> &
-  CourseWithCategories<TCategory> &
-  CourseWithChapters<TChapter>
-
-export type PublishedCourse = LeanCourse & { isPublished: true }
-
-export type CourseCard = Pick<LeanCourse, "_id" | "title" | "slug" | "thumbnail" | "price" | "averageRating" | "totalEnrollments" | "level">
-
-export type CreateCourseDTO = Omit<BaseCourse, "_id" | "createdAt" | "updatedAt" | "averageRating" | "totalEnrollments" | "totalReviews">
-export type CourseSlug = Pick<LeanCourse, "slug">
-
-export type HomeCourse = {
-  _id: any
-  slug: string
+export type CourseDetailsSerialized = {
+  _id: string
   title: string
+  slug: string
+  description: string
   thumbnail: string
   price: number
-  averageRating: number
-  duration: number
   level: string
-  categories: { name: string }[]
-  instructor: { name: string }
+  duration: number
+  averageRating: number
+  totalEnrollments: number
+  createdAt: string
+  updatedAt: string
+
+  instructor: {
+    _id: string
+    name?: string
+    bio:string
+  } | null
+
+  categories: {
+    name: string
+    slug: string
+  }[]
+
+  chapters: {
+    _id: string
+    title: string
+   lessons: LessonSerialized[]
+  }[]
 }

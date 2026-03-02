@@ -23,7 +23,7 @@ import { PublicNav } from "@/components/public-nav"
 import { PublicFooter } from "@/components/public-footer"
 import Reveal from "@/components/animations/Reveal"
 import { getSession } from "@/utils/session"
-import { serializeHomeCourse } from "@/lib/serializers"
+import { serializeCourseDetails } from "@/lib/serializers"
 
 const features = [
   {
@@ -101,7 +101,7 @@ export default async function HomePage() {
     })
     .sort({ createdAt: -1 })
     .lean()
-  const safeCourses = courses.map(serializeHomeCourse)
+  const safeCourses = courses.map(serializeCourseDetails)
   const popularCourses = safeCourses.slice(0, 4)
 
   return (

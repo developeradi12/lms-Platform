@@ -6,29 +6,12 @@ import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import jwt from "jsonwebtoken"
 import Chapter from "@/models/Chapter";
+import { getSession } from "@/utils/session";
 
 export async function POST(req: NextRequest) {
   try {
     await connectDb();
-    const cookieStore = await cookies()
-    const token = cookieStore.get("accessToken")?.value
-
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    let userId: string
-
-    try {
-      const decoded = jwt.verify(
-        token,
-        process.env.ACCESS_TOKEN_SECRET!
-      ) as { userId: string }
-
-      userId = decoded.userId
-    } catch {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 })
-    }
+    const session = await getSession();
 
     const { lessonId, watchedSeconds } =
       await req.json();
@@ -48,7 +31,7 @@ export async function POST(req: NextRequest) {
 
     // 2️⃣ Check enrollment
     const enrollment = await Enrollment.findOne({
-      user: userId,
+      user: session?.userId,
       course: courseId,
       status: "ACTIVE",
     })
@@ -59,20 +42,20 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // 3️⃣ Calculate completion threshold (85%)
-    const threshold = lesson.duration * 60 * 0.98 // if duration in minutes
-    const isCompleted = watchedSeconds >= threshold
+    const totalSeconds = lesson.duration * 60
+    const watchedPercent = (watchedSeconds / totalSeconds) * 100
+    const isCompleted = watchedPercent >= 90
 
     // 4️⃣ Update progress
     await Progress.findOneAndUpdate(
-      { user: userId, lesson: lessonId },
+      { user: session?.userId, lesson: lessonId },
       {
-        user: userId,
+        user: session?.userId,
         lesson: lessonId,
         course: courseId,
-        watchedSeconds,
+        $max: { watchedSeconds },
         isCompleted,
-        completedAt: isCompleted ? new Date() : null,
+        ...(isCompleted && { completedAt: new Date() }),
       },
       { upsert: true, new: true }
     )
@@ -85,7 +68,7 @@ export async function POST(req: NextRequest) {
     })
 
     const completedLessons = await Progress.countDocuments({
-      user: userId,
+      user: session?.userId,
       course: courseId,
       isCompleted: true,
     })
@@ -96,7 +79,7 @@ export async function POST(req: NextRequest) {
 
     // 6️⃣ Update enrollment progress
     await Enrollment.findOneAndUpdate(
-      { user: userId, course: courseId },
+      { user: session?.userId, course: courseId },
       { progress: percentage }
     )
 

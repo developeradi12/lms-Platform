@@ -1,16 +1,14 @@
 import Pagination from "./_components/Pagination"
 import CourseList from "./_components/CourseList"
 import connectDb from "@/lib/db"
-import "@/models/Category"
 import "@/models/User"
 import SearchInput from "./_components/SearchInput"
 import Filters from "./_components/filters"
 
-import { categoryService } from "@/lib/service/category"
 import { getCourses } from "@/lib/service/course"
 import Category from "@/models/Category"
-import { PublicCategory } from "@/types"
-import { CategoryDocument } from "@/types/db"
+import { CategorySerialized } from "@/types"
+import { serializeCategory } from "@/lib/serializers"
 
 interface Props {
   searchParams: Promise<{
@@ -33,17 +31,9 @@ export default async function CoursesPage({ searchParams }: Props) {
   const categoriesQuery = params.categories || ""
   const price = params.price || ""
 
-const categories: PublicCategory[] = (
-  await Category.find().lean<CategoryDocument[]>()
-).map(cat => ({
-  _id: String(cat._id),
-  name: cat.name,
-  description: cat.description,
-  image: cat.image,
-  slug: cat.slug,
-  createdAt: cat.createdAt.toISOString(),
-  updatedAt: cat.updatedAt.toISOString(),
-}))
+  const rawCategories = await Category.find().lean()
+
+  const categories = rawCategories.map(serializeCategory)
 
   // Fetch courses and total count in parallel
   const { total, courses } = await getCourses({ search, categories: categoriesQuery, price, skip, limit })

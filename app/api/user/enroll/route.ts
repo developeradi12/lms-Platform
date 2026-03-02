@@ -4,20 +4,12 @@ import { getAuthUser } from "@/lib/getAuthUser"
 import { Course } from "@/models/Course"
 import Enrollment from "@/models/Enrollment"
 import Progress from "@/models/Progress"
+import { getSession } from "@/utils/session"
 
 export async function POST(req: Request) {
     try {
         await connectDb()
-
-        // 🔐 Get logged in user
-        const user = await getAuthUser()
-        if (!user) {
-            return NextResponse.json(
-                { success: false, message: "Unauthorized" },
-                { status: 401 }
-            )
-        }
-
+        const session = await getSession();
         const { slug } = await req.json()
 
         if (!slug) {
@@ -46,7 +38,7 @@ export async function POST(req: Request) {
 
         // 🚫 Check if already enrolled
         const existing = await Enrollment.findOne({
-            user: user._id,
+            user: session?.userId,
             course: course._id,
         })
 
@@ -59,7 +51,7 @@ export async function POST(req: Request) {
 
         // ✅ Create enrollment
         await Enrollment.create({
-            user: user._id,
+            user: session?.userId,
             course: course._id,
             progress: 0,
             enrolledAt: new Date(),
@@ -81,17 +73,9 @@ export async function POST(req: Request) {
 export async function GET() {
     try {
         await connectDb()
-
-        const user = await getAuthUser()
-        if (!user) {
-            return NextResponse.json(
-                { success: false, message: "Unauthorized" },
-                { status: 401 }
-            )
-        }
-
+        const session = await getSession();
         const enrollments = await Enrollment.find({
-            user: user._id,
+            user:session?.userId,
             status: "ACTIVE",
         })
             .populate({
@@ -112,7 +96,7 @@ export async function GET() {
 
         // 2️⃣ Get progress records
         const progressRecords = await Progress.find({
-            user: user._id
+            user: session?.userId
         }).lean()
 
         // 3️⃣ Format data with real progress calculation

@@ -11,36 +11,10 @@ import CourseDetailsClient from "../_components/CourseDetailsClient"
 
 import { LeanUserWishlist } from "@/types/user"
 import { getSession } from "@/utils/session"
-import { CourseDocument } from "@/types/db"
 
-// 🔹 Define populated course type using your type system
-type PopulatedCourseDocument = Omit<
-  CourseDocument,
-  "instructor" | "categories" | "chapters"
-> & {
-  instructor: {
-    _id: any
-    name?: string
-  }
-
-  categories: {
-    _id: any
-    name: string
-    slug: string
-  }[]
-
-  chapters: {
-    _id: any
-    title: string
-    lessons: {
-      _id: any
-      title: string
-      videoUrl?: string
-      isFreePreview: boolean
-    }[]
-  }[]
-}
-
+import { serializeCourseDetails } from "@/lib/serializers"
+import { CourseDetailsSerialized } from "@/types"
+      
 export default async function CourseDetailsPage({
   params,
 }: {
@@ -64,7 +38,7 @@ export default async function CourseDetailsPage({
     })
     .populate({ path: "categories", select: "name slug", options: { lean: true } })
     .populate({ path: "instructor", select: "firstName lastName name", options: { lean: true } })
-    .lean<PopulatedCourseDocument>()
+    .lean<CourseDetailsSerialized>()
 
   if (!courseDoc) return notFound()
 
@@ -112,44 +86,7 @@ export default async function CourseDetailsPage({
     })
   }
 
-  // 🔹 Serialize for Client Component (RSC safe)
-  const course = {
-  _id: String(courseDoc._id),
-  title: courseDoc.title,
-  slug: courseDoc.slug,
-  description: courseDoc.description,
-  thumbnail: courseDoc.thumbnail,
-  price: courseDoc.price,
-  level: courseDoc.level,
-  duration: courseDoc.duration,
-  averageRating: courseDoc.averageRating,
-  totalEnrollments: courseDoc.totalEnrollments,
-  createdAt: courseDoc.createdAt.toISOString(),
-  updatedAt: courseDoc.updatedAt.toISOString(),
-
-  instructor: courseDoc.instructor
-    ? {
-        _id: String(courseDoc.instructor._id),
-        firstName: courseDoc.instructor.name,
-      }
-    : null,
-
-  categories: courseDoc.categories.map((cat: any) => ({
-    name: cat.name,
-    slug: cat.slug,
-  })),
-
-  chapters: courseDoc.chapters.map((chapter: any) => ({
-    _id: String(chapter._id),
-    title: chapter.title,
-    lessons: chapter.lessons.map((lesson: any) => ({
-      _id: String(lesson._id),
-      title: lesson.title,
-      videoUrl: lesson.videoUrl ?? null,
-      isFreePreview: lesson.isFreePreview,
-    })),
-  })),
-}
+const course = serializeCourseDetails(courseDoc)
 
   return (
     <CourseDetailsClient

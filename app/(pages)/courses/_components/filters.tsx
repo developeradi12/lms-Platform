@@ -1,10 +1,10 @@
 "use client"
 
-import { PublicCategory } from "@/types"
+import { CategorySerialized } from "@/types"
 import { useRouter, useSearchParams } from "next/navigation"
 
 type Props = {
-  categories: PublicCategory[]
+  categories: CategorySerialized[]
 }
 
 export default function Filters({ categories }: Props) {

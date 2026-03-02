@@ -2,14 +2,13 @@
 
 import { useEffect, useRef } from "react"
 import { motion } from "framer-motion"
-import { Lesson } from "@/types/lesson"
 import { getYoutubeId } from "@/lib/getYoutube"
 import api from "@/lib/api"
 import { PlayCircle } from "lucide-react"
+import { LessonSerialized } from "@/types"
 
 interface Props {
-  lesson: Lesson
-  onLessonCompleted?: () => void
+  lesson: LessonSerialized | null
 }
 
 declare global {
@@ -19,11 +18,18 @@ declare global {
   }
 }
 
-export default function VideoPlayer({ lesson, onLessonCompleted }: Props) {
+export default function VideoPlayer({ lesson }: Props) {
   const playerRef = useRef<any>(null)
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
   const lastSavedRef = useRef<number>(0)
 
+  if (!lesson) {
+    return (
+      <div className="aspect-video w-full flex items-center justify-center rounded-2xl overflow-hidden border bg-muted text-muted-foreground">
+        Select a lesson to start learning
+      </div>
+    )
+  }
   useEffect(() => {
     if (!lesson?.videoUrl) return
 
@@ -67,12 +73,15 @@ export default function VideoPlayer({ lesson, onLessonCompleted }: Props) {
 
     const startTracking = () => {
       intervalRef.current = setInterval(async () => {
-        if (!playerRef.current) return
+        if (!playerRef.current || lesson.isComplete) return
 
         const currentTime = playerRef.current.getCurrentTime()
         const duration = playerRef.current.getDuration()
         if (!duration) return
 
+        const watchedPercent = (currentTime / duration) * 100
+
+        // Save progress every 10 sec
         if (currentTime - lastSavedRef.current >= 10) {
           lastSavedRef.current = currentTime
 
@@ -81,24 +90,35 @@ export default function VideoPlayer({ lesson, onLessonCompleted }: Props) {
               lessonId: lesson._id,
               watchedSeconds: currentTime,
             })
-
-            if (res.data.lessonCompleted && onLessonCompleted) {
-              onLessonCompleted()
-            }
           } catch {
             console.log("Progress save failed")
           }
         }
+        // 🎉 Auto complete at 90%
+        if (watchedPercent >= 90 && !lesson.isComplete) {
+          try {
+            await api.post("/api/progress/complete", {
+              lessonId: lesson._id,
+            })
+
+            // stop tracking after completion
+            if (intervalRef.current) {
+              clearInterval(intervalRef.current)
+            }
+          } catch {
+            console.log("Completion update failed")
+          }
+        }
       }, 5000)
     }
-
     initPlayer()
+
 
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
       if (playerRef.current?.destroy) playerRef.current.destroy()
     }
-  }, [lesson])
+  }, [lesson._id])
 
   return (
     <motion.div
@@ -109,7 +129,7 @@ export default function VideoPlayer({ lesson, onLessonCompleted }: Props) {
     >
       {/* 🎬 Video Container */}
       <div className="relative group">
-        
+
         {/* Glow Border */}
         <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-primary/40 via-purple-500/30 to-primary/40 blur-xl opacity-40 group-hover:opacity-70 transition duration-500" />
 
