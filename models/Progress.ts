@@ -1,4 +1,5 @@
-import mongoose, { Schema, Types, model } from "mongoose";
+import mongoose, { Schema, Types } from "mongoose";
+import { boolean } from "zod";
 
 const ProgressSchema = new Schema(
   {
@@ -6,39 +7,46 @@ const ProgressSchema = new Schema(
       type: Types.ObjectId,
       ref: "User",
       required: true,
-    },
-
-    lesson: {
-      type: Types.ObjectId,
-      ref: "Lesson",
-      required: true,
+      index: true,
     },
 
     course: {
       type: Types.ObjectId,
       ref: "Course",
       required: true,
-       index: true,
+      index: true,
     },
 
-    watchedSeconds: {
+    completedLessons: [
+      {
+        type: Types.ObjectId,
+        ref: "Lesson",
+      },
+    ],
+
+    lastAccessedLesson: {
+      type: Types.ObjectId,
+      ref: "Lesson",
+    },
+     isCompeted:{
+      type:boolean
+     },
+    percentage: {
       type: Number,
       default: 0,
+      min: 0,
+      max: 100,
     },
 
-    isCompleted: {
-      type: Boolean,
-      default: false,
+    completedAt: {
+      type: Date,
     },
-
-    completedAt: Date,
   },
   { timestamps: true }
 );
 
-ProgressSchema.index(
-  { user: 1, lesson: 1 },
-  { unique: true }
-);
+// 🔥 Prevent duplicate progress per course per user
+ProgressSchema.index({ user: 1, course: 1 }, { unique: true });
+
 export default mongoose.models.Progress ||
-  mongoose.model("Progress", ProgressSchema)
+  mongoose.model("Progress", ProgressSchema);

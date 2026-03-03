@@ -22,7 +22,6 @@ import { formatDuration } from "@/utils/formatDuration"
 import { PublicNav } from "@/components/public-nav"
 import { PublicFooter } from "@/components/public-footer"
 import Reveal from "@/components/animations/Reveal"
-import { getSession } from "@/utils/session"
 import { serializeCourseDetails } from "@/lib/serializers"
 
 const features = [
@@ -85,8 +84,6 @@ const stats = [
 
 export default async function HomePage() {
   await connectDb();
-  const session = await getSession();
-  const role = session?.role || null;
 
   const courses = await Course.find({ isPublished: true })
     .populate({
@@ -107,7 +104,7 @@ export default async function HomePage() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Navbar */}
-      <PublicNav role={role} />
+      <PublicNav/>
       <main className="flex-1">
         {/* Hero Section */}
         <section className="relative overflow-hidden">

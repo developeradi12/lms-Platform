@@ -9,11 +9,6 @@ export default async function DashboardPage() {
 
   return (
     <>
-       <SiteHeader
-        role={user.role}
-        userName={user.name}
-        notificationCount={0}
-      />
        <DashboardContent
         user={user}
         enrollments={enrollments}

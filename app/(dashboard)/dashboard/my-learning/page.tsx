@@ -18,21 +18,11 @@ import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
-interface Course {
-    _id: string
-    title: string
-    slug: string
-    categories: { _id: string; name: string }[]
-    level: string
-    instructor: string
-    totalLessons: number
-    totalDuration: string
-    progress: number
-    thumbnail: string
-}
+import { EnrollmentSerialized } from "@/types/enrollment"
+import { CourseDetailsSerialized } from "@/types/course"
 
 export default function MyCoursesPage() {
-    const [courses, setCourses] = useState<Course[]>([])
+    const [courses, setCourses] = useState<EnrollmentSerialized[]>([])
     const [loading, setLoading] = useState(true)
     const [tab, setTab] = useState("all")
 
@@ -53,14 +43,37 @@ export default function MyCoursesPage() {
         fetchCourses()
     }, [])
 
-    // Filters
+    /* ---------------- Helper Functions ---------------- */
+
+    const getTotalLessons = (course: CourseDetailsSerialized) => {
+        return course.chapters.reduce(
+            (acc, chapter) => acc + chapter.lessons.length,
+            0
+        )
+    }
+
+    const getProgressPercent = (enrollment: EnrollmentSerialized) => {
+        const total = getTotalLessons(enrollment.course)
+        const completed = enrollment.progress.completedLessons.length
+
+        if (!total) return 0
+        return Math.floor((completed / total) * 100)
+    }
+
+    /* ---------------- Filters ---------------- */
+
     const inProgress = useMemo(
-        () => courses.filter(c => c.progress > 0 && c.progress < 100),
+        () =>
+            courses.filter((c) => {
+                const percent = getProgressPercent(c)
+                return percent > 0 && percent < 100
+            }),
         [courses]
     )
 
     const completed = useMemo(
-        () => courses.filter(c => c.progress === 100),
+        () =>
+            courses.filter((c) => getProgressPercent(c) === 100),
         [courses]
     )
 
@@ -75,19 +88,24 @@ export default function MyCoursesPage() {
         }
     }, [tab, courses, inProgress, completed])
 
-    // Stats
+    /* ---------------- Stats ---------------- */
+
     const totalHours = useMemo(() => {
         return Math.floor(
-            courses.reduce((acc, c) => acc + Number(c.totalDuration || 0), 0) / 60
+            courses.reduce(
+                (acc, c) => acc + Number(c.course.duration || 0),
+                0
+            ) / 60
         )
     }, [courses])
 
-    return (
-        <div className="flex flex-col gap-6 p-4 md:p-6">
+    /* ---------------- UI ---------------- */
 
+    return (
+        <div className="flex flex-col gap-6 p-4 ">
             {/* HEADER */}
             <div>
-                <h2 className="text-2xl font-bold text-foreground font-[family-name:var(--font-space-grotesk)]">
+                <h2 className="text-2xl font-bold text-foreground">
                     My Learning
                 </h2>
                 <p className="text-muted-foreground">
@@ -106,9 +124,7 @@ export default function MyCoursesPage() {
             {/* TABS */}
             <Tabs value={tab} onValueChange={setTab}>
                 <TabsList className="bg-secondary">
-                    <TabsTrigger value="all">
-                        All ({courses.length})
-                    </TabsTrigger>
+                    <TabsTrigger value="all">All ({courses.length})</TabsTrigger>
                     <TabsTrigger value="in-progress">
                         In Progress ({inProgress.length})
                     </TabsTrigger>
@@ -130,81 +146,87 @@ export default function MyCoursesPage() {
                         </div>
                     ) : (
                         <div className="flex flex-col gap-4">
-                            {filteredCourses.map((course) => (
-                                <Link
-                                    key={course._id}
-                                    href={`/courses/${course.slug}/learn`}
-                                >
-                                    <Card className="border-border bg-card hover:shadow-md transition-all hover:-translate-y-1">
-                                        <CardContent className="p-4 md:p-5">
-                                            <div className="flex flex-col gap-4 md:flex-row md:items-center">
+                            {filteredCourses.map((enrollment) => {
+                                const course = enrollment.course
+                                const percent = getProgressPercent(enrollment)
+                                const totalLessons = getTotalLessons(course)
 
-                                                {/* Thumbnail */}
-                                                <div className="relative h-20 w-28 rounded-lg overflow-hidden shrink-0">
-                                                    <Image
-                                                        src={course.thumbnail}
-                                                        alt={course.title}
-                                                        fill
-                                                        className="object-cover"
-                                                        sizes="112px"
-                                                    />
-                                                </div>
+                                return (
+                                    <Link
+                                        key={enrollment._id}
+                                        href={`/courses/${course.slug}/learn`}
+                                    >
+                                        <Card className="border-border bg-card hover:shadow-md transition-all hover:-translate-y-1">
+                                            <CardContent className="p-4 md:p-5">
+                                                <div className="flex flex-col gap-4 md:flex-row md:items-center">
 
-                                                {/* Info */}
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex flex-wrap items-center gap-2 mb-1">
-                                                        {course.categories?.map((cat) => (
-                                                            <Badge key={cat._id}>{cat.name}</Badge>
-                                                        ))}
-                                                        <Badge variant="outline" className="text-xs">
-                                                            {course.level}
-                                                        </Badge>
-                                                        {course.progress === 100 && (
-                                                            <Badge className="text-xs bg-accent">
-                                                                Completed
+                                                    {/* Thumbnail */}
+                                                    <div className="relative h-20 w-28 rounded-lg overflow-hidden shrink-0">
+                                                        <Image
+                                                            src={course.thumbnail}
+                                                            alt={course.title}
+                                                            fill
+                                                            className="object-cover"
+                                                            sizes="112px"
+                                                        />
+                                                    </div>
+
+                                                    {/* Info */}
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                                                            {course.categories.map((cat) => (
+                                                                <Badge key={cat.slug}>{cat.name}</Badge>
+                                                            ))}
+
+                                                            <Badge variant="outline" className="text-xs">
+                                                                {course.level}
                                                             </Badge>
+
+                                                            {percent === 100 && (
+                                                                <Badge className="text-xs bg-accent">
+                                                                    Completed
+                                                                </Badge>
+                                                            )}
+                                                        </div>
+
+                                                        <h3 className="text-base font-semibold truncate">
+                                                            {course.title}
+                                                        </h3>
+
+                                                        <p className="text-sm text-muted-foreground">
+                                                            {course.instructor?.name || "Unknown Instructor"} · {totalLessons} lessons
+                                                        </p>
+                                                    </div>
+
+                                                    {/* Progress */}
+                                                    <div className="flex flex-col items-end gap-2 md:w-56 shrink-0">
+                                                        <div className="flex items-center justify-between w-full text-sm">
+                                                            <span className="text-muted-foreground">
+                                                                Progress
+                                                            </span>
+                                                            <span className="font-semibold">
+                                                                {percent}%
+                                                            </span>
+                                                        </div>
+
+                                                        <Progress value={percent} className="h-2 w-full" />
+
+                                                        {percent < 100 ? (
+                                                            <Button size="sm">Continue</Button>
+                                                        ) : (
+                                                            <Button size="sm" variant="outline">
+                                                                <Trophy className="size-3 mr-1" />
+                                                                Certificate
+                                                            </Button>
                                                         )}
                                                     </div>
 
-                                                    <h3 className="text-base font-semibold truncate">
-                                                        {course.title}
-                                                    </h3>
-
-                                                    <p className="text-sm text-muted-foreground">
-                                                        {course.instructor} · {course.totalLessons} lessons
-                                                    </p>
                                                 </div>
-
-                                                {/* Progress */}
-                                                <div className="flex flex-col items-end gap-2 md:w-56 shrink-0">
-                                                    <div className="flex items-center justify-between w-full text-sm">
-                                                        <span className="text-muted-foreground">
-                                                            Progress
-                                                        </span>
-                                                        <span className="font-semibold">
-                                                            {course.progress}%
-                                                        </span>
-                                                    </div>
-
-                                                    <Progress value={course.progress} className="h-2 w-full" />
-
-                                                    {course.progress < 100 ? (
-                                                        <Button size="sm">
-                                                            Continue
-                                                        </Button>
-                                                    ) : (
-                                                        <Button size="sm" variant="outline">
-                                                            <Trophy className="size-3 mr-1" />
-                                                            Certificate
-                                                        </Button>
-                                                    )}
-                                                </div>
-
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                </Link>
-                            ))}
+                                            </CardContent>
+                                        </Card>
+                                    </Link>
+                                )
+                            })}
                         </div>
                     )}
                 </TabsContent>

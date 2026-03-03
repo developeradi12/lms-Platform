@@ -1,39 +1,44 @@
 "use client"
-import { useEffect, ReactNode } from "react";
+import { createContext, ReactNode, useContext, useEffect, useState } from "react";
+import api from "./api";
+import { UserSerialize } from "@/types/user";
 
-type AuthProviderProps = {
-  children: ReactNode;
-};
 
-export default function AuthProvider({ children }: AuthProviderProps) {
+
+type AuthContextType = {
+  user: UserSerialize | null,
+  loading: boolean,
+  logout: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType | null>(null);
+
+export function useAuth() {
+  return useContext(AuthContext)!;
+}
+
+export default function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<UserSerialize | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-
-    let interval: NodeJS.Timeout;
-
-    const startRefresh = async () => {
-      const res = await fetch("/api/auth/refresh", {
-        method: "POST",
-        credentials: "include"
-      });
-
-      if (res.ok) {
-        interval = setInterval(() => {
-          fetch("/api/auth/refresh", {
-            method: "POST",
-            credentials: "include"
-          });
-        }, 14 * 60 * 1000);
+    async function fetchUser() {
+      try {
+        const res = await api.get("/api/auth/me");
+        setUser(res.data.user);
+      } finally {
+        setLoading(false);
       }
-    };
-
-    startRefresh();
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-
+    } fetchUser();
   }, []);
+  const logout = async () => {
+    await api.post("/api/auth/logout");
+    setUser(null);
+  };
 
-  return <>{children}</>;
+  return (
+    <AuthContext.Provider value={{ user, loading, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }

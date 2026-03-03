@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/card"
 
 import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
 
 import {
   BarChart,
@@ -30,19 +29,18 @@ import {
 } from "recharts"
 
 import Link from "next/link"
+import {  UserSerialize } from "@/types/user"
+import { Enrollments } from "@/types/enrollment"
+
 
 interface Props {
-  user: any
-  enrollments: any[]
-  // weeklyActivity: { day: string; hours: number }[]
-  // streak?: number
+  user: UserSerialize
+  enrollments: Enrollments[]
 }
 
 export default function DashboardContent({
   user,
   enrollments,
-  // weeklyActivity,
-  // streak = 0,
 }: Props) {
   const streak = 7
 

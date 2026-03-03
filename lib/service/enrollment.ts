@@ -1,7 +1,12 @@
 import Enrollment from "@/models/Enrollment"
-import Progress from "@/models/Progress"
+import { Enrollments, EnrollmentSerialized } from "@/types"
 
-export async function getUserEnrollments(userId: string) {
+import "@/models/Course"
+import "@/models/Progress"
+import "@/models/User"
+export async function getUserEnrollments(userId: string): Promise<Enrollments[]> {
+
+  //find enrollments
   const enrollments = await Enrollment.find({ user: userId })
     .populate({
       path: "course",
@@ -10,55 +15,42 @@ export async function getUserEnrollments(userId: string) {
         { path: "categories", select: "name slug" },
       ],
     })
-    .lean()
+    .populate({
+      path: "progress",
+      select: "completedLessons percentage updatedAt lastAccessedLesson",
+    })
+    .lean<EnrollmentSerialized[]>();
 
   if (!enrollments.length) return []
 
-  const courseIds = enrollments.map(
-    (e: any) => e.course?._id
-  )
+  const result: Enrollments[] = [];
 
-  const progressDocs = await Progress.find({
-    user: userId,
-    course: { $in: courseIds },
-  }).lean()
+  
+  for (const enrollment of enrollments) {
+    const course = enrollment.course;
+    const progressDoc = enrollment.progress;
 
-  const progressMap = new Map(
-    progressDocs.map((p: any) => [
-      p.course.toString(),
-      p.completedLessons?.length || 0,
-    ])
-  )
+    if (!course) continue; // skip invalid safely
 
-  return enrollments
-    .map((enrollment: any) => {
-      const course = enrollment.course
-      if (!course) return null
+    const completedLessons =
+      progressDoc?.completedLessons?.length || 0;
 
-      const completedLessons =
-        progressMap.get(course._id.toString()) || 0
+    result.push({
+      enrollmentId: enrollment._id.toString(),
+      courseId: course._id.toString(),
+      title: course.title,
+      slug: course.slug,
+      thumbnail: course.thumbnail,
+      instructor: course.instructor ?? null,
+      completedLesson: completedLessons,
+      totalDuration: course.duration,
+      price: course.price,
+      progress: progressDoc?.percentage ?? 0,
+      status: enrollment.status,
+      enrolledAt: enrollment.enrolledAt,
+      lastUpdated: progressDoc?.lastAccessedLesson ?? null,
+    });
+  }
 
-      const totalLessons = course.totalLessons || 0
-
-      const progress = totalLessons
-        ? Math.round((completedLessons / totalLessons) * 100)
-        : 0
-
-      const instructorName =
-        course.instructor?.name ||
-        `${course.instructor?.firstName || ""} ${course.instructor?.lastName || ""}`.trim()
-
-      return {
-        _id: course._id,
-        title: course.title,
-        slug: course.slug,
-        thumbnail: course.thumbnail,
-        instructor: instructorName,
-        totalLessons,
-        totalDuration: course.duration,
-        price: course.price,
-        progress,
-      }
-    })
-    .filter(Boolean)
+  return result;
 }

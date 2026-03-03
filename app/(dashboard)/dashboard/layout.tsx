@@ -3,20 +3,20 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar"
 
-import { SiteHeader } from "../_components/site-header";
-import { AppSidebar } from "../_components/app-sidebar";
-import { getAuthUser } from "@/lib/getAuthUser";
+import { SiteHeader } from "../_components/site-header"
+import { AppSidebar } from "../_components/app-sidebar"
+import { useAuth } from "@/lib/AuthProvider"
+import { getAuthUser } from "@/lib/getAuthUser"
 
 export default async function Layout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
-  type Role = "ADMIN" | "STUDENT"
+
   const user = await getAuthUser()
-  console.log(user);
-  const name = user?.name
-  const userRole = (user?.role === "ADMIN" ? "ADMIN" : "STUDENT") as Role;
+
+
   return (
     <SidebarProvider
       style={
@@ -26,10 +26,24 @@ export default async function Layout({
         } as React.CSSProperties
       }
     >
-      <AppSidebar role={userRole} userName={name} />
-      <SidebarInset >
-        {children}
+      <AppSidebar
+        role={user?.role}
+        userName={user?.name}
+      />
+
+      <SidebarInset>
+        {/* Header always visible */}
+        <SiteHeader
+          role={user?.role}
+          userName={user?.name}
+          notificationCount={0}
+        />
+
+        {/*  Only  changes */}
+        <div className="p-4">
+          {children}
+        </div>
       </SidebarInset>
     </SidebarProvider>
-  );
+  )
 }

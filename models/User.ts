@@ -24,7 +24,7 @@ const UserSchema = new Schema(
     password: {
       type: String,
       required: true,
-      select: true, 
+      select: true,
     },
 
     role: {
@@ -32,6 +32,10 @@ const UserSchema = new Schema(
       enum: ["SUPER_ADMIN", "ADMIN", "INSTRUCTOR", "STUDENT"],
       default: "STUDENT",
     },
+    enrolledCourses: [{
+      type: Types.ObjectId,
+      ref: "Enrollment",
+    }],
 
     avatar: {
       type: String,

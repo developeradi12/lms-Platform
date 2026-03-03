@@ -25,17 +25,15 @@ import {
 import { useRouter } from "next/navigation"
 import api from "@/lib/api"
 
-export type Role = "ADMIN" | "instructor" | "STUDENT"
-
 interface SiteHeaderProps {
-  role?: Role
+ role?: "ADMIN" | "STUDENT"|"SUPER_ADMIN" |"INSTRUCTOR"
   userName?: string
   notificationCount?: number
 }
 
 export function SiteHeader({
-  role = "STUDENT",
-  userName = "Guest",
+  role,
+  userName,
   notificationCount = 0,
 }: SiteHeaderProps) {
 
@@ -63,7 +61,7 @@ export function SiteHeader({
         <h1 className="hidden sm:block text-lg font-semibold">
           {role === "ADMIN"
             ? "Admin Panel"
-            : role === "instructor"
+            : role === "INSTRUCTOR"
             ? "Instructor Dashboard"
             : "Student Dashboard"}
         </h1>

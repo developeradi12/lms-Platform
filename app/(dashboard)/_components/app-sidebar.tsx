@@ -30,12 +30,18 @@ import {
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
+type Role = "ADMIN" | "STUDENT" | "SUPER_ADMIN" | "INSTRUCTOR"
+
 interface AppSidebarProps {
-  role?: "ADMIN" | "STUDENT"
+  role?: Role
   userName?: string
 }
 
-const navConfig = {
+const navConfig: Record<Role, {
+  title: string
+  href: string
+  icon: any
+}[]> = {
   ADMIN: [
     { title: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
     { title: "Manage Courses", href: "/admin/courses", icon: Library },
@@ -46,19 +52,35 @@ const navConfig = {
     { title: "Dashboard", href: "/dashboard", icon: BarChart3 },
     { title: "My Learning", href: "/dashboard/my-learning", icon: BookOpen },
   ],
+  SUPER_ADMIN: [
+    { title: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+    { title: "Users", href: "/admin/users", icon: Users },
+  ],
+  INSTRUCTOR: [
+    { title: "Dashboard", href: "/instructor/dashboard", icon: LayoutDashboard },
+    { title: "My Courses", href: "/instructor/courses", icon: BookOpen },
+  ],
 }
 
-const accountNav = {
+const accountNav: Record<Role, {
+  title: string
+  href: string
+  icon: any
+}[]> = {
   ADMIN: [
-    // { title: "Wishlist", href: "/dashboard/wishlist", icon: Heart },
-    // { title: "Payments", href: "/dashboard/payments", icon: CreditCard },
     { title: "Profile", href: "/dashboard/profile", icon: UserCircle },
   ],
   STUDENT: [
     { title: "Wishlist", href: "/dashboard/wishlist", icon: Heart },
     { title: "Payments", href: "/dashboard/payments", icon: CreditCard },
     { title: "Profile", href: "/dashboard/profile", icon: UserCircle },
-  ]
+  ],
+  SUPER_ADMIN: [
+    { title: "Profile", href: "/dashboard/profile", icon: UserCircle },
+  ],
+  INSTRUCTOR: [
+    { title: "Profile", href: "/dashboard/profile", icon: UserCircle },
+  ],
 }
 
 export function AppSidebar({

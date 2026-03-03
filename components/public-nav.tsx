@@ -6,10 +6,8 @@ import { usePathname } from "next/navigation"
 import { CircleUser, GraduationCap, LayoutDashboard, Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
+import { useAuth } from "@/lib/AuthProvider"
 
-type Props = {
-  role?: string | null;
-}
 
 const navLinks = [
   { label: "Home", href: "/" },
@@ -18,15 +16,14 @@ const navLinks = [
   { label: "Contact-us", href: "/contact" }
 ]
 
-export function PublicNav({ role }: Props) {
-
+export function PublicNav() {
+  const { user, loading } = useAuth();
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
   const dashboardRoute = useMemo(() => {
+    if (!user) return "/login"
 
-    if (!role) return "/login"
-
-    switch (role) {
+    switch (user?.role) {
       case "ADMIN":
         return "/admin/dashboard"
       case "INSTRUCTOR":
@@ -34,7 +31,7 @@ export function PublicNav({ role }: Props) {
       default:
         return "/dashboard"
     }
-  }, [role])
+  }, [user?.role])
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md">
@@ -73,7 +70,7 @@ export function PublicNav({ role }: Props) {
 
         {/* Desktop CTA */}
         <div className="hidden items-center gap-3 md:flex">
-          {role ? (
+          {user?.role ? (
             <Button
               variant="ghost"
               size="icon"
@@ -130,7 +127,7 @@ export function PublicNav({ role }: Props) {
               )
             })}
             <div className="flex flex-col gap-2 pt-2">
-              {role ? (
+              {user?.role ? (
                 <Button variant="ghost" size="icon" asChild>
                   <Link href={dashboardRoute}>
                     <LayoutDashboard className="mr-2 size-4" />

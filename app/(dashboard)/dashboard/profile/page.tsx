@@ -14,7 +14,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 
@@ -160,7 +159,7 @@ export default function ProfilePage() {
 
       {/* HEADER */}
       <div>
-        <h2 className="text-2xl font-bold font-[family-name:var(--font-space-grotesk)]">
+        <h2 className="text-2xl font-bold">
           My Profile
         </h2>
         <p className="text-muted-foreground">

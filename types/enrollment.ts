@@ -1,38 +1,38 @@
-export type EnrollmentStatus = "ACTIVE" | "COMPLETED" | "REFUNDED"
+import { CourseDetailsSerialized } from "./course";
+import { ProgressSerialized } from "./progress";
 
-import { Types } from "mongoose"
+export type EnrollmentSerialized = {
+  _id: string;
 
-export interface BaseEnrollment {
-  _id: string
+  user: string;
+  course: CourseDetailsSerialized
 
-  user: Types.ObjectId
-  course: Types.ObjectId
+  progress: ProgressSerialized;
 
-  progress: number
-  enrolledAt: Date
+  enrolledAt: string;
 
-  status: EnrollmentStatus
+  status: "ACTIVE" | "COMPLETED" | "REFUNDED";
 
-  createdAt: Date
-  updatedAt: Date
+  createdAt: string;
+  updatedAt: string;
 }
-export type LeanEnrollment = Omit<
-  BaseEnrollment,
-  "user" | "course"
-> & {
-  user: string
-  course: string
-}
-//Enrollment Preview : Dashboard / course card me use hota hai
-export type EnrollmentPreview = Pick<LeanEnrollment,"_id" | "course" | "progress" | "status">
 
-//Enrollment With Course (Populate)
-export type EnrollmentWithCourse<TCourse> =Omit<LeanEnrollment, "course"> & {course: TCourse}
-
-//Enrollment With User (Admin use)
-export type EnrollmentWithUser<TUser> =Omit<LeanEnrollment, "user"> & {user: TUser}
-
-//Progress Update
-export type UpdateProgressDTO = Pick<BaseEnrollment,"progress">
-
-export type CreateEnrollmentDTO = Pick<BaseEnrollment,"user" | "course">
+export  type Enrollments = {
+    enrollmentId: string;
+    courseId: string;
+    title: string;
+    slug: string;
+    thumbnail: string;
+    instructor: {
+        _id: string;
+        name?: string | undefined;
+        bio: string;
+    } | null;
+    completedLesson: number;
+    totalDuration: number;
+    price: number;
+    progress: number;
+    status: "ACTIVE" | "COMPLETED" | "REFUNDED";
+    enrolledAt: string;
+    lastUpdated: string | null;
+} 
