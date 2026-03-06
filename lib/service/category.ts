@@ -1,30 +1,46 @@
-import { AdminCategory, CategorySlug, CreateCategoryDTO } from "@/types"
-import api from "../api"
+import Category from "@/models/Category"
+import connectDb from "../db"
+import { CategorySerialized } from "@/types/category"
 
-export const categoryService = {
-  getAll:async():Promise<AdminCategory[]>=>{
-    const res  = await api.get<{data:AdminCategory[]}>("/api/admin/categories")
-     return res.data.data || []
-  },
-  deleteBySlug: async (slug: CategorySlug["slug"]) => {
-    await api.delete(`/api/admin/categories/${slug}`)
-  },
- 
-  createCategory: async (formData: FormData): Promise<CreateCategoryDTO> => {
-    const res = await api.post<{ Categories: CreateCategoryDTO}>("/api/admin/categories",
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      })
-      return  res.data.Categories;
+export async function getAdminCategories({
+  page = 1,
+  limit = 10,
+  search = "",
+  sort = "latest",
+}) {
+  await connectDb()
+
+  const skip = (page - 1) * limit
+
+  const query: any = {}
+
+  if (search) {
+    query.$or = [
+      { name: { $regex: search, $options: "i" } },
+      { slug: { $regex: search, $options: "i" } },
+      { metaTitle: { $regex: search, $options: "i" } },
+    ]
+  }
+
+  let sortQuery: any = { createdAt: -1 }
+
+  if (sort === "oldest") sortQuery = { createdAt: 1 }
+  if (sort === "name_asc") sortQuery = { name: 1 }
+  if (sort === "name_desc") sortQuery = { name: -1 }
+
+  const [categories, total] = await Promise.all([
+    Category.find(query)
+      .sort(sortQuery)
+      .skip(skip)
+      .limit(limit)
+      .lean<CategorySerialized[]>(),
+
+    Category.countDocuments(query),
+  ])
+
+  return {
+    categories, 
+    total,
+    totalPages: Math.ceil(total / limit),
   }
 }
-
-//sending entire schema only send required data is overcame
-/*❌ Sending unnecessary data
-❌ Bigger payload
-❌ Security risk (internal fields exposed)
-❌ Bad API design*/
-/* {{{{      This Is Called: DTO Pattern (Data Transfer Object)          }}}}*/

@@ -1,9 +1,11 @@
-import { categoryService } from "../../../../../lib/service/category"
+import connectDb from "@/lib/db"
 import CreateCourseForm from "./CreateCourseForm"
+import Category from "@/models/Category";
 
 export default async function Page() {
-  const categories = await categoryService.getAll();
-
-  return <CreateCourseForm categories={categories} />
+     
+  await connectDb();
+  const categories = await Category.find().lean();
+  return <CreateCourseForm  categories={JSON.parse(JSON.stringify(categories))} />
 }
 

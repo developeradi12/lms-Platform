@@ -43,7 +43,7 @@ export function SiteHeader({
     try {
       const res = await api.post("/api/auth/logout", { withCredentials: true })
       if (res.data?.success) {
-        router.push("/login")
+        router.push("/")
         router.refresh()
       }
     } catch (error) {

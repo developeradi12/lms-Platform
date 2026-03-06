@@ -23,7 +23,7 @@ import ThumbnailUpload from "@/components/Upload"
 import { MultiSelect } from "@/components/multiSelect"
 import { levelOptions } from "@/lib/course-option"
 import { CourseCreateInput, CourseCreateSchema } from "@/schemas/courseSchema"
-import { courseService } from "@/lib/service/course"
+import api from "@/lib/api"
 
 type CategoryOption = {
   _id: string
@@ -87,7 +87,7 @@ export default function CreateCourseForm({ categories }: Props) {
           formData.append(key, String(value))
         }
       })
-      await courseService.createCourse(formData);
+      await api.post("api/admin/courses",formData);
 
       toast.success("Course created successfully")
       router.push("/admin/courses")
@@ -102,7 +102,7 @@ export default function CreateCourseForm({ categories }: Props) {
   /* ------------------ UI ------------------ */
 
   return (
-    <div className="p-6 space-y-8 max-w-5xl mx-auto">
+    <div className=" space-y-6 max-w-7xl">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

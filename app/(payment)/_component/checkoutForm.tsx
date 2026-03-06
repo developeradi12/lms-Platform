@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -9,7 +9,12 @@ import { Separator } from "@/components/ui/separator"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { Lock, CreditCard } from "lucide-react"
-import { CourseDocument } from "@/schemas/courseSchema"
+
+declare global {
+  interface Window {
+    Razorpay: any
+  }
+}
 
 interface CourseWithInstructor {
   _id: string
@@ -30,34 +35,103 @@ export default function CheckoutForm({ course }: CheckoutFormProps) {
   const [coupon, setCoupon] = useState("")
   const [agree, setAgree] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [scriptLoaded, setScriptLoaded] = useState(false)
 
   const discount = 0
   const finalPrice = course.price - discount
 
+  // Load Razorpay Script
+  useEffect(() => {
+    const loadScript = () => {
+      return new Promise<boolean>((resolve) => {
+        const script = document.createElement("script")
+        script.src = "https://checkout.razorpay.com/v1/checkout.js"
+        script.onload = () => {
+          setScriptLoaded(true)
+          resolve(true)
+        }
+        script.onerror = () => resolve(false)
+        document.body.appendChild(script)
+      })
+    }
+
+    loadScript()
+  }, [])
+
   const handlePayment = async () => {
     if (!agree) return
+
+    if (!scriptLoaded) {
+      alert("Payment SDK not loaded. Please refresh.")
+      return
+    }
 
     try {
       setLoading(true)
 
-      const res = await fetch("/api/create-payment", {
+      const res = await fetch("/api/razorpay/order", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          courseId: course._id,
-          coupon,
+          amount: finalPrice,
         }),
       })
 
-      const data = await res.json()
+      const order = await res.json()
 
-      // Redirect to payment gateway (Stripe/Razorpay)
-      window.location.href = data.url
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY,
+        amount: order.amount,
+        currency: order.currency,
+        order_id: order.id,
+        name: "My LMS",
+        description: course.title,
+
+        handler: async function (response: any) {
+
+          const verifyRes = await fetch("/api/razorpay/verify", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature,
+            }),
+          })
+
+          const data = await verifyRes.json()
+
+          if (data.isOk) {
+            alert("Payment Successful")
+
+            // redirect to course page
+            window.location.href = `/courses/${course._id}`
+
+          } else {
+            alert("Payment verification failed")
+          }
+        },
+
+        prefill: {
+          name: "Test User",
+          email: "test@example.com",
+        },
+
+        theme: {
+          color: "#6366f1",
+        },
+      }
+
+      const razorpay = new window.Razorpay(options)
+      razorpay.open()
 
     } catch (error) {
       console.error(error)
+      alert("Something went wrong during payment")
     } finally {
       setLoading(false)
     }
@@ -98,11 +172,10 @@ export default function CheckoutForm({ course }: CheckoutFormProps) {
               Payment Details
             </h3>
 
-            <Input placeholder="Card Number" />
-            <div className="grid grid-cols-2 gap-4">
-              <Input placeholder="MM/YY" />
-              <Input placeholder="CVC" />
-            </div>
+            {/* Razorpay handles card UI automatically */}
+            <p className="text-sm text-muted-foreground">
+              You will be redirected to secure Razorpay checkout.
+            </p>
 
             <div className="flex items-center gap-2">
               <Checkbox
@@ -131,7 +204,7 @@ export default function CheckoutForm({ course }: CheckoutFormProps) {
 
       </div>
 
-      {/* RIGHT SIDE - ORDER SUMMARY */}
+      {/* RIGHT SIDE */}
       <div>
         <Card>
           <CardContent className="p-6 space-y-4">

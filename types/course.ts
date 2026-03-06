@@ -1,4 +1,5 @@
 import { LessonSerialized } from "./lesson"
+import { ProgressSerialized } from "./progress"
 
 export type CourseSerialized = {
   _id: string
@@ -44,11 +45,11 @@ export type CourseDetailsSerialized = {
   totalEnrollments: number
   createdAt: string
   updatedAt: string
-
+  isPublished: string
   instructor: {
     _id: string
     name?: string
-    bio:string
+    bio: string
   } | null
 
   categories: {
@@ -59,6 +60,8 @@ export type CourseDetailsSerialized = {
   chapters: {
     _id: string
     title: string
-   lessons: LessonSerialized[]
+    lessons: LessonSerialized[]
   }[]
+
+  progress?: ProgressSerialized | null
 }

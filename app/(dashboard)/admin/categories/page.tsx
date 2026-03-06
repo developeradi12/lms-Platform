@@ -1,19 +1,35 @@
+import { getAdminCategories } from "@/lib/service/category"
 import AdminCategoriesClient from "./AdminCategoriesClient"
-import { AdminCategoryQuery } from "@/types"
+import { serializeCategories } from "@/lib/serializers"
+
+export type AdminCategoryQuery = {
+  page?: string
+  search?: string
+  sort?: "latest" | "oldest" | "name_asc" | "name_desc"
+}
 
 export default async function AdminCategoriesPage({
   searchParams,
 }: {
   searchParams: Promise<AdminCategoryQuery>
 }) {
-  const params = await searchParams
+  const page = Number((await searchParams).page ?? "1")
+  const search = (await searchParams).search ?? ""
+  const sort = (await searchParams).sort ?? "latest"
 
-  const page = Number(params.page ?? "1")
-  const search = params.search ?? ""
-  const sort = params.sort ?? "latest"
-
-  return (
+  const { categories, total, totalPages } =
+    await getAdminCategories({
+      page,
+      limit: 10,
+      search,
+      sort,
+    })
+const serializedCategories = serializeCategories(categories)  
+return (
     <AdminCategoriesClient
+      initialCategories={serializedCategories}
+      total={total}
+      totalPages={totalPages}
       page={page}
       search={search}
       sort={sort}

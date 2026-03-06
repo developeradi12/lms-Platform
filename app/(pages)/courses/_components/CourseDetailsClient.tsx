@@ -21,7 +21,8 @@ import api from "@/lib/api"
 import Link from "next/link"
 import { reviews } from "@/lib/data/reviews"
 import Reveal from "@/components/animations/Reveal"
-import { CourseDetailsSerialized, LessonSerialized } from "@/types"
+import { CourseDetailsSerialized } from "@/types/course"
+import { LessonSerialized } from "@/types/lesson"
 
 
 interface Props {
@@ -93,7 +94,7 @@ export default function CourseDetailsClient({ course, isEnrolled = false, isWish
 
         toast.success("Enrolled successfully 🎉")
 
-        router.push(`/cou`)
+        router.push(`/courses/${course.slug}`)
       } catch (err) {
         toast.error("Enrollment failed")
       } finally {

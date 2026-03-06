@@ -4,11 +4,13 @@ export type ProgressSerialized = {
   _id: string
   user: string
   course: string
+
+  completedLessons: string[]
+  lastAccessedLesson: string | null
+
   percentage: number
-  completedLessons: string[];
   isCompleted: boolean
-  completedAt?: string;
-  lastAccessedLesson?: string;
-  createdAt: string;
-  updatedAt: string;
+
+  createdAt: string
+  updatedAt: string
 }

@@ -20,8 +20,8 @@ import { toast } from "sonner"
 import { Controller } from "react-hook-form";
 import ThumbnailUpload from "@/components/Upload"
 import api from "@/lib/api"
-import { CreateCategoryForm } from "@/types"
-import { createCategoryFormSchema } from "@/schemas/categorySchema"
+import { createCategoryFormSchema, CreateCategoryFormValues } from "@/schemas/categorySchema"
+
 
 export default function CreateCategoryPage() {
   const router = useRouter()
@@ -31,7 +31,7 @@ export default function CreateCategoryPage() {
 Schema → runtime validation
 DTO → compile time safety */
 
-  const form =useForm<CreateCategoryForm>({
+  const form =useForm<CreateCategoryFormValues>({
     resolver: zodResolver(createCategoryFormSchema),
     defaultValues: {
       name: "",
@@ -42,11 +42,13 @@ DTO → compile time safety */
     },
   })
 
-  const onSubmit = async (values: CreateCategoryForm) => {
-    console.log("FORM VALUES:", values)
+
+  // api call
+  const onSubmit = async (values: CreateCategoryFormValues) => {
+    
     try {
       setLoading(true)
-      console.log("values", values);
+      
       const formData = new FormData();
       if (values.name) formData.append("name", values.name)
       if (values.description) formData.append("description", values.description)
@@ -68,6 +70,7 @@ DTO → compile time safety */
       setLoading(false)
     }
   }
+
   return (
     <div className=" max-w-full space-y-6">
       {/* Header */}
@@ -99,7 +102,7 @@ DTO → compile time safety */
             className="space-y-6"
           >
             <div className="space-y-2">
-              <Label>Category Name *</Label>
+              <Label>Category Name </Label>
               <Input
                 className="rounded-xl"
                 placeholder="Eg: Frontend, Backend, DSA..."

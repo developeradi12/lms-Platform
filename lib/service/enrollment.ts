@@ -1,5 +1,5 @@
 import Enrollment from "@/models/Enrollment"
-import { Enrollments, EnrollmentSerialized } from "@/types"
+import { Enrollments, EnrollmentSerialized } from "@/types/enrollment"
 
 import "@/models/Course"
 import "@/models/Progress"

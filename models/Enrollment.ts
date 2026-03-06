@@ -18,7 +18,6 @@ const EnrollmentSchema = new Schema(
     progress: {
      type:Types.ObjectId,
      ref:"Progress",
-     required:true,
      index:true,
     },
     enrolledAt: {

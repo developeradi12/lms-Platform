@@ -28,9 +28,10 @@ const ProgressSchema = new Schema(
       type: Types.ObjectId,
       ref: "Lesson",
     },
-     isCompeted:{
-      type:boolean
-     },
+    isCompleted: {
+      type: Boolean,
+      default: false
+    },
     percentage: {
       type: Number,
       default: 0,

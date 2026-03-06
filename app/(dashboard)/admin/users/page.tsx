@@ -72,6 +72,14 @@ export default function AdminStudentsPage() {
 
   return (
     <div className="w-full space-y-6 px-3 sm:px-4 lg:px-0">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold">Students</h1>
+          <p className="text-sm text-muted-foreground">
+            Manage all your Students from here.
+          </p>
+        </div>
+      </div>
       <Card className="rounded-2xl">
         <CardHeader className="space-y-2">
           <CardTitle className="text-xl sm:text-2xl">

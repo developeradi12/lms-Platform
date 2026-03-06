@@ -5,9 +5,7 @@ import {
 
 import { SiteHeader } from "../_components/site-header"
 import { AppSidebar } from "../_components/app-sidebar"
-import { useAuth } from "@/lib/AuthProvider"
 import { getAuthUser } from "@/lib/getAuthUser"
-
 export default async function Layout({
   children,
 }: {

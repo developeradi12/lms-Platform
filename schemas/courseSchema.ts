@@ -63,6 +63,8 @@ export const CourseUpdateSchema = z.object({
   isPublished: z.boolean().optional(),
   tags: z.array(z.string()).optional(),
   prerequisites: z.array(z.string()).optional(),
+    metaDescription:z.string().optional(),
+    metaTitle:z.string().optional(),
 })
 
 export interface CourseDocument {

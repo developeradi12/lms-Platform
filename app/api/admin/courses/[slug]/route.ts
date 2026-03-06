@@ -7,6 +7,7 @@ import "@/models/Lesson"
 import path from "path"
 import fs from "fs/promises";
 import { cookies } from "next/headers"
+import { getSession } from "@/utils/session"
 
 export async function GET(
   req: Request,
@@ -61,17 +62,16 @@ export async function PUT(
 ) {
   try {
     await connectDb()
-    const cookieStore = await cookies()
-    const accessToken = cookieStore.get("accessToken")?.value
+    const session = await getSession();
 
-    if (!accessToken) {
+    if (!session) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
     const { slug } = await params;
-    // console.log("course slug", slug);
+
     const course = await Course.findOne({ slug })
-    // console.log("course", course);
+
     if (!course) {
       return NextResponse.json(
         { message: "Not found" },
@@ -81,27 +81,37 @@ export async function PUT(
     const formData = await req.formData()
 
 
-    const title = formData.get("title") as string;
-    const description = formData.get("description") as string;
-    const category = formData.get("category") as string;
-    const price = Number(formData.get("price"));
-    const durationValue = formData.get("duration")
-    const isPublished = formData.get("isPublished") === "true";
-    const duration = durationValue ? Number(durationValue) : 0
-    const thumbnailFile = formData.get("thumbnail") as File | null;
+    const title = formData.get("title") as string
+    const description = formData.get("description") as string
+    const price = Number(formData.get("price"))
+    const duration = Number(formData.get("duration") || 0)
+    const level = formData.get("level") as string
+    const isPublished = formData.get("isPublished") === "true"
+
+    const metaTitle = formData.get("metaTitle") as string
+    const metaDescription = formData.get("metaDescription") as string
+
+    const categories = JSON.parse(formData.get("categories") as string || "[]")
+    const tags = JSON.parse(formData.get("tags") as string || "[]")
+    const prerequisites = JSON.parse(
+      formData.get("prerequisites") as string || "[]"
+    )
+
+    const thumbnailFile = formData.get("thumbnail") as File | null
+
     let thumbnailPath = course.thumbnail;//keep old image
     // replace image
     if (thumbnailFile && thumbnailFile.size > 0) {
 
       // delete old image
-      if (course.image) {
+      if (course.thumbnail) {
         const oldPath = path.join(
           process.cwd(),
           "public",
-          course.image
+          course.thumbnail
         )
 
-        fs.unlink(oldPath).catch(() => { })
+        await fs.unlink(oldPath).catch(() => { })
       }
 
       const bytes = await thumbnailFile.arrayBuffer()
@@ -127,10 +137,15 @@ export async function PUT(
       {
         title,
         description,
-        category,
-        isPublished,
+        categories,
         price,
         duration,
+        level,
+        tags,
+        prerequisites,
+        metaTitle,
+        metaDescription,
+        isPublished,
         thumbnail: thumbnailPath,
       },
       {
@@ -138,13 +153,6 @@ export async function PUT(
         runValidators: true,
       },)
 
-
-    if (!updated) {
-      return NextResponse.json(
-        { success: false, message: "Course not found" },
-        { status: 404 }
-      )
-    }
 
     return NextResponse.json(
       { success: true, message: "Course updated", course: updated },

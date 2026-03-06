@@ -55,7 +55,7 @@ export default function AdminLessonsPage() {
   const courseId = params.slug as string
   const chapterId = params.chapterId as string
   const slug = courseId;
-console.log("courseId,chapterId",courseId,chapterId);
+// console.log("courseId,chapterId",courseId,chapterId);
   const [search, setSearch] = useState("")
   const [loading, setLoading] = useState(true)
   const [lessons, setLessons] = useState<Lesson[]>([])

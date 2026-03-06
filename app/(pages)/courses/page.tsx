@@ -7,7 +7,7 @@ import Filters from "./_components/filters"
 
 import { getCourses } from "@/lib/service/course"
 import Category from "@/models/Category"
-import { CategorySerialized } from "@/types"
+
 import { serializeCategory } from "@/lib/serializers"
 
 interface Props {

@@ -111,7 +111,7 @@ const CourseSchema = new Schema<CourseDocument>(
 CourseSchema.pre("save", async function (next) {
   // generate only if not provided
   if (!this.slug) {
-    this.slug = await generateUniqueSlug(this.title, mongoose.models.Course);
+    this.slug = await generateUniqueSlug(this.title, models.Course);
   }
 
   // sanitize manual slug
@@ -127,5 +127,5 @@ CourseSchema.pre("save", async function (next) {
 });
 
 export const Course =
-  mongoose.models.Course ||
+  models.Course ||
   mongoose.model<CourseDocument>("Course", CourseSchema)

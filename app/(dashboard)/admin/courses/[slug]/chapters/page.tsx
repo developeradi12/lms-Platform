@@ -41,7 +41,7 @@ import api from "@/lib/api"
 type Chapter = {
   _id: string
   title: string
-  slug:string
+  slug: string
   course?: {
     _id: string
     title?: string
@@ -53,10 +53,10 @@ type Chapter = {
 }
 
 export default function AdminChaptersPage() {
-  
-  const {slug} = useParams()
+
+  const { slug } = useParams()
   console.log(slug);
- 
+
   const [search, setSearch] = useState("")
   const [loading, setLoading] = useState(true)
   const [chapters, setChapters] = useState<Chapter[]>([])
@@ -118,13 +118,20 @@ export default function AdminChaptersPage() {
             Manage all chapters of this course.
           </p>
         </div>
-
-        <Button asChild className="rounded-xl">
-          <Link href={`/admin/courses/${slug}/chapters/create`}>
-            <Plus className="mr-2 h-4 w-4" />
-            Create Chapter
-          </Link>
-        </Button>
+        
+        <div className="flex gap-2">
+          <Button asChild variant="outline" className="rounded-xl">
+            <Link href={`/admin/courses`}>
+              Back to Course
+            </Link>
+          </Button>
+          <Button asChild className="rounded-xl">
+            <Link href={`/admin/courses/${slug}/chapters/create`}>
+              <Plus className="mr-2 h-4 w-4" />
+              Create Chapter
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Search */}

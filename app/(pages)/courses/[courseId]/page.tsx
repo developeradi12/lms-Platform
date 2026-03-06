@@ -9,11 +9,13 @@ import Enrollment from "@/models/Enrollment"
 import User from "@/models/User"
 import CourseDetailsClient from "../_components/CourseDetailsClient"
 
-import { LeanUserWishlist } from "@/types/user"
+
 import { getSession } from "@/utils/session"
 
 import { serializeCourseDetails } from "@/lib/serializers"
-import { CourseDetailsSerialized } from "@/types"
+import { CourseDetailsSerialized } from "@/types/course"
+import { UserSerialize } from "@/types/user"
+
       
 export default async function CourseDetailsPage({
   params,
@@ -67,15 +69,15 @@ export default async function CourseDetailsPage({
   if (userId) {
     const user = await User.findById(userId)
       .select("wishlist")
-      .lean<LeanUserWishlist>()
-
+      .lean<UserSerialize>()
+    
     isWishlisted =
       user?.wishlist?.some(
         (id: any) => id.toString() === courseDoc._id.toString()
       ) ?? false
   }
 
-  // 🔐 Secure lesson videos
+  //  Secure lesson videos
   if (!isEnrolled) {
     courseDoc.chapters.forEach((chapter: any) => {
       chapter.lessons.forEach((lesson: any) => {

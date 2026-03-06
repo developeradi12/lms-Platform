@@ -11,9 +11,12 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
 import api from "@/lib/api";
-import {  updateCategorySchema } from "@/schemas/categorySchema";
+import {  UpdateCategoryform, updateCategorySchema } from "@/schemas/categorySchema";
 import ThumbnailUpload from "@/components/Upload";
-import { CategorySlug, UpdateCategoryForm } from "@/types"
+
+type CategorySlug = {
+    slug : string
+}
 
 export default function EditCategoryPage() {
     const router = useRouter()
@@ -22,7 +25,7 @@ export default function EditCategoryPage() {
     console.log("check", slug);
     const [loading, setLoading] = useState(true)
 
-    const form =useForm<UpdateCategoryForm>({
+    const form =useForm<UpdateCategoryform>({
         resolver: zodResolver(updateCategorySchema),
         defaultValues: {
             name: "",
@@ -68,7 +71,7 @@ export default function EditCategoryPage() {
         if (slug) fetchCategory();
     }, [slug]);
 
-    const onSubmit = async (values: UpdateCategoryForm) => {
+    const onSubmit = async (values: UpdateCategoryform) => {
         // console.log("SUBMIT TRIGGERED")
         try {
            setLoading(true)

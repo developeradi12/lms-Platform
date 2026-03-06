@@ -2,22 +2,16 @@ import { CourseDetailsSerialized } from "./course";
 import { ProgressSerialized } from "./progress";
 
 export type EnrollmentSerialized = {
-  _id: string;
-
-  user: string;
-  course: CourseDetailsSerialized
-
-  progress: ProgressSerialized;
-
-  enrolledAt: string;
-
-  status: "ACTIVE" | "COMPLETED" | "REFUNDED";
-
-  createdAt: string;
-  updatedAt: string;
+    _id: string;
+    course: CourseDetailsSerialized
+    progress: ProgressSerialized;
+    enrolledAt: string;
+    status: "ACTIVE" | "COMPLETED" | "REFUNDED";
+    createdAt: string;
+    updatedAt: string;
 }
 
-export  type Enrollments = {
+export type Enrollments = {
     enrollmentId: string;
     courseId: string;
     title: string;

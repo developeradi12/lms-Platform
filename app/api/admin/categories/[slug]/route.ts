@@ -109,26 +109,6 @@ export async function PUT(
     }
 }//working
 
-// export async function PATCH(req: Request, { params }: Params) {
-//     try {
-//         await connectDb();
-
-//         const slug = params;
-//         const body = await req.json()
-
-//         const updated = await Category.findByIdAndUpdate(slug, body, {
-//             new: true,
-//             runValidators: true,
-//         })
-
-//         if (!updated) {
-//             return NextResponse.json({ success: false, message: "Category not found" }, { status: 404 })
-//         }
-//         return NextResponse.json({ success: true, message: "Category patched", data: updated })
-//     } catch (error: any) {
-//         return NextResponse.json({ success: false, message: error.message }, { status: 500 })
-//     }
-// }
 
 export async function GET(req: Request, { params }: { params: Promise<{ slug: string }> }) {
     try {

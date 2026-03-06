@@ -1,11 +1,12 @@
 import connectDb from "@/lib/db"
 import { NextResponse } from "next/server"
-import { getAuthUser } from "@/lib/getAuthUser"
 import { Course } from "@/models/Course"
 import Enrollment from "@/models/Enrollment"
 import Progress from "@/models/Progress"
 import { getSession } from "@/utils/session"
-
+import User from "@/models/User"
+import "@/models/Chapter"
+import "@/models/Lesson"
 export async function POST(req: Request) {
     try {
         await connectDb()
@@ -27,7 +28,6 @@ export async function POST(req: Request) {
                 { status: 404 }
             )
         }
-
         // 💰 Free course check
         if (course.price > 0) {
             return NextResponse.json(
@@ -48,13 +48,21 @@ export async function POST(req: Request) {
                 message: "Already enrolled",
             })
         }
-
-        // ✅ Create enrollment
-        await Enrollment.create({
+        const progress = await Progress.create({
             user: session?.userId,
             course: course._id,
-            progress: 0,
-            enrolledAt: new Date(),
+            completedLessons: []
+        })
+
+        const enrollment = await Enrollment.create({
+            user: session?.userId,
+            course: course._id,
+            progress: progress._id,
+        })
+
+        // update user
+        await User.findByIdAndUpdate(session?.userId, {
+            $push: { enrolledCourses: enrollment._id }
         })
 
         return NextResponse.json(
@@ -75,7 +83,7 @@ export async function GET() {
         await connectDb()
         const session = await getSession();
         const enrollments = await Enrollment.find({
-            user:session?.userId,
+            user: session?.userId,
             status: "ACTIVE",
         })
             .populate({
@@ -87,38 +95,65 @@ export async function GET() {
                     },
                     {
                         path: "instructor",
-                        select: "name",
+                        select: "name bio",
+                    },
+                    {
+                        path: "chapters",
+                        populate: {
+                            path: "lessons",
+                        },
                     },
                 ],
             })
-            .lean()
+            .lean();
 
+        const progressList = await Progress.find({
+            user: session?.userId,
+        }).lean();
+        const progressMap = new Map();
 
-        // 2️⃣ Get progress records
-        const progressRecords = await Progress.find({
-            user: session?.userId
-        }).lean()
-
+        progressList.forEach((p: any) => {
+            progressMap.set(p.course.toString(), p)
+        })
         // 3️⃣ Format data with real progress calculation
 
         const formatted = enrollments.map((enrollment: any) => {
-            return {
-                _id: enrollment.course._id,
-                title: enrollment.course.title,
-                slug: enrollment.course.slug,
-                categories: enrollment.course.categories,
-                level: enrollment.course.level,
-                instructor:
-                    enrollment.course.instructor?.name || "Unknown",
-                totalLessons: enrollment.course.totalLessons,
-                totalDuration: enrollment.course.duration,
-                thumbnail: enrollment.course.thumbnail,
 
-                // ✅ Directly use enrollment progress
-                progress: enrollment.progress || 0,
+            const courseId = enrollment.course._id.toString()
+
+            const progressDoc = progressMap.get(courseId)
+
+            const percentage = progressDoc?.percentage || 0
+
+            return {
+                _id: enrollment._id.toString(),
+
+                course: {
+                    _id: courseId,
+                    title: enrollment.course.title,
+                    slug: enrollment.course.slug,
+                    description: enrollment.course.description,
+                    thumbnail: enrollment.course.thumbnail,
+                    price: enrollment.course.price,
+                    level: enrollment.course.level,
+                    duration: enrollment.course.duration,
+                    instructor: enrollment.course.instructor,
+                    categories: enrollment.course.categories,
+                    chapters: enrollment.course.chapters,
+                },
+
+                progress: {
+                    _id: progressDoc?._id || null,
+                    percentage,
+                    completedLessons: progressDoc?.completedLessons || [],
+                    isCompleted: percentage === 100,
+                    completedAt: progressDoc?.completedAt || null,
+                },
+
+                enrolledAt: enrollment.enrolledAt,
+                status: enrollment.status,
             }
         })
-
         return NextResponse.json({
             success: true,
             data: formatted,

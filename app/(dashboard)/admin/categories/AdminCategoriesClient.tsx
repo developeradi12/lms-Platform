@@ -22,7 +22,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,44 +40,52 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { useDebounce } from "@/hooks/useDebounce"
+
 import Pagination from "@/components/common/Pagination"
+import { useDebounce } from "@/hooks/useDebounce"
 import { useQueryParams } from "@/hooks/useQueryParams"
-import { AdminCategory } from "@/types"
+import { CategorySerialized } from "@/types/category"
+
+
 
 type Props = {
+  initialCategories: CategorySerialized[]
+  total: number
+  totalPages: number
   page: number
   search: string
   sort: string
 }
 
-export default function AdminCategoriesClient({ page, search, sort }: Props) {
-  const limit = 10
-  const [items, setItems] = useState<AdminCategory[]>([])
-  const [total, setTotal] = useState(0)
-  const [loading, setLoading] = useState(true)
+export default function AdminCategoriesClient({
+  initialCategories,
+  total,
+  totalPages,
+  page,
+  search,
+  sort,
+}: Props) {
+  const router = useRouter()
+
+  const [items, setItems] = useState(initialCategories)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+
   const { setParams } = useQueryParams()
-  // UI search state
+
   const [query, setQuery] = useState(search)
   const [sortValue, setSortValue] = useState(sort)
-  const userTypedRef = useRef(false)
-  // keep UI in sync when URL changes
-  useEffect(() => {
-    setQuery(search)
-    setSortValue(sort)
-    userTypedRef.current = false
-  }, [search, sort])
 
+  const userTypedRef = useRef(false)
+
+  useEffect(() => {
+    setItems(initialCategories)
+  }, [initialCategories])
 
   const debouncedQuery = useDebounce(query, 500)
 
-  // IMPORTANT: prevent resetting page to 1 on first mount
-  const firstRun = useRef(true)
-
-  // whenever search/sort changes => reset to page 1 (but not on first mount)
   useEffect(() => {
     if (!userTypedRef.current) return
+
     setParams(
       {
         page: 1,
@@ -89,51 +96,23 @@ export default function AdminCategoriesClient({ page, search, sort }: Props) {
     )
   }, [debouncedQuery, sortValue, setParams])
 
-  // when sort changes (user action)
-  useEffect(() => {
-    setParams({ page: 1, search: query, sort: sortValue })
-  }, [sortValue])
-
-  const fetchCategories = async () => {
-    try {
-      setLoading(true)
-
-      const res = await api.get<{categories: AdminCategory[],total: number}>("/api/admin/categories", {
-        params: {
-          page,
-          limit,
-          search,
-          sort,
-        },
-      })
-      setItems(res.data?.categories || [])
-      setTotal(res.data?.total || 0)
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Failed to load categories")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchCategories()
-  }, [page, search, sort])
-
-
-  const totalPages = useMemo(() => {
-    return Math.max(1, Math.ceil(total / limit))
-  }, [total])
-
   const goToPage = (p: number) => {
-    setParams({ page: p, search, sort })
+    setParams({
+      page: p,
+      search,
+      sort,
+    })
   }
 
-  const handleDelete = async (slug: AdminCategory["slug"]) => {
+  const handleDelete = async (slug: string) => {
     try {
       setDeletingId(slug)
+
       await api.delete(`/api/admin/categories/${slug}`)
+
       toast.success("Category deleted")
-      fetchCategories()
+
+      router.refresh()
     } catch (error: any) {
       toast.error(error?.response?.data?.message || "Delete failed")
     } finally {
@@ -143,7 +122,7 @@ export default function AdminCategoriesClient({ page, search, sort }: Props) {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* HEADER */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Categories</h1>
@@ -160,7 +139,7 @@ export default function AdminCategoriesClient({ page, search, sort }: Props) {
         </Button>
       </div>
 
-      {/* Search */}
+      {/* SEARCH */}
       <Card className="rounded-2xl">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Search & Filter</CardTitle>
@@ -170,9 +149,10 @@ export default function AdminCategoriesClient({ page, search, sort }: Props) {
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative w-full sm:max-w-sm">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+
               <Input
                 className="pl-9 rounded-xl"
-                placeholder="Search by name, slug, meta title..."
+                placeholder="Search category..."
                 value={query}
                 onChange={(e) => {
                   userTypedRef.current = true
@@ -181,11 +161,18 @@ export default function AdminCategoriesClient({ page, search, sort }: Props) {
               />
             </div>
 
-            {/* Sort */}
-            <Select value={sortValue} onValueChange={setSortValue}>
+            {/* SORT */}
+            <Select
+              value={sortValue}
+              onValueChange={(v) => {
+                userTypedRef.current = true
+                setSortValue(v)
+              }}
+            >
               <SelectTrigger className="w-full sm:w-[220px] rounded-xl">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
+
               <SelectContent>
                 <SelectItem value="latest">Latest</SelectItem>
                 <SelectItem value="oldest">Oldest</SelectItem>
@@ -197,7 +184,7 @@ export default function AdminCategoriesClient({ page, search, sort }: Props) {
         </CardContent>
       </Card>
 
-      {/* Table */}
+      {/* TABLE */}
       <Card className="rounded-2xl">
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
@@ -209,13 +196,7 @@ export default function AdminCategoriesClient({ page, search, sort }: Props) {
         </CardHeader>
 
         <CardContent>
-          {loading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full rounded-xl" />
-              ))}
-            </div>
-          ) : items.length === 0 ? (
+          {items.length === 0 ? (
             <div className="py-10 text-center">
               <p className="text-sm text-muted-foreground">
                 No categories found.
@@ -227,17 +208,17 @@ export default function AdminCategoriesClient({ page, search, sort }: Props) {
                 <Table className="min-w-[900px]">
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="px-4 py-3">Image</TableHead>
-                      <TableHead className="px-4 py-3">Name</TableHead>
-                      <TableHead className="px-4 py-3">Slug</TableHead>
-                      <TableHead className="px-4 py-3">Description</TableHead>
-                      <TableHead className="px-4 py-3 hidden md:table-cell">
+                      <TableHead>Image</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Slug</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead className="hidden md:table-cell">
                         Meta Title
                       </TableHead>
-                      <TableHead className="px-4 py-3 hidden md:table-cell">
+                      <TableHead className="hidden md:table-cell">
                         Created
                       </TableHead>
-                      <TableHead className="px-4 py-3">Actions</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
 
@@ -254,25 +235,21 @@ export default function AdminCategoriesClient({ page, search, sort }: Props) {
                                 className="object-cover"
                               />
                             ) : (
-                              <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
+                              <div className="flex items-center justify-center text-xs text-muted-foreground h-full">
                                 No Image
                               </div>
                             )}
                           </div>
                         </TableCell>
 
-                        <TableCell className="py-3 px-4 align-middle">
-                          {cat.name}
+                        <TableCell>{cat.name}</TableCell>
+
+                        <TableCell>
+                          <Badge variant="outline">{cat.slug}</Badge>
                         </TableCell>
 
                         <TableCell>
-                          <Badge variant="outline" className="rounded-xl">
-                            {cat.slug}
-                          </Badge>
-                        </TableCell>
-
-                        <TableCell>
-                          {cat.description?.trim().slice(0, 30)}
+                          {cat.description?.slice(0, 30)}
                         </TableCell>
 
                         <TableCell className="hidden md:table-cell">
@@ -283,15 +260,17 @@ export default function AdminCategoriesClient({ page, search, sort }: Props) {
                           {new Date(cat.createdAt).toLocaleDateString()}
                         </TableCell>
 
-                        <TableCell className="py-3 px-4 align-middle">
-                          <div className="flex gap-2 justify-end">
+                        <TableCell>
+                          <div className="flex gap-2">
                             <Button
                               asChild
                               size="icon"
                               variant="outline"
                               className="rounded-xl"
                             >
-                              <Link href={`/admin/categories/${cat.slug}/edit`}>
+                              <Link
+                                href={`/admin/categories/${cat.slug}/edit`}
+                              >
                                 <Pencil className="w-4 h-4" />
                               </Link>
                             </Button>
@@ -318,12 +297,14 @@ export default function AdminCategoriesClient({ page, search, sort }: Props) {
                                 </AlertDialogHeader>
 
                                 <AlertDialogFooter>
-                                  <AlertDialogCancel className="rounded-xl">
+                                  <AlertDialogCancel>
                                     Cancel
                                   </AlertDialogCancel>
+
                                   <AlertDialogAction
-                                    className="rounded-xl"
-                                    onClick={() => handleDelete(cat.slug)}
+                                    onClick={() =>
+                                      handleDelete(cat.slug)
+                                    }
                                     disabled={deletingId === cat.slug}
                                   >
                                     {deletingId === cat.slug
@@ -343,14 +324,12 @@ export default function AdminCategoriesClient({ page, search, sort }: Props) {
             </div>
           )}
 
-          {/* Pagination */}
-          {/* {!loading && totalPages > 1 && ( */}
+          {/* PAGINATION */}
           <Pagination
             page={page}
             totalPages={totalPages}
             onPageChange={goToPage}
           />
-          {/* )} */}
         </CardContent>
       </Card>
     </div>

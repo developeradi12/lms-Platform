@@ -56,29 +56,48 @@ import { cookies } from "next/headers"
 // }
 
 export async function GET(req: Request) {
-  try {
-    await connectDb()
-    const cookieStore = await cookies()
-    const accessToken = cookieStore.get("accessToken")?.value
+  await connectDb()
 
-    if (!accessToken) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
-    }
-    const categories = await Category.find({})
-      .select("_id name slug")
-      .sort({ createdAt: -1 })
-      .lean()
+  const { searchParams } = new URL(req.url)
 
-    return NextResponse.json(
-      { success: true, message: "Category  found", data: categories },
-      { status: 201 }
-    )
-  } catch {
-    return NextResponse.json(
-      { success: true, message: "Category not found" },
-      { status: 500 }
-    )
+  const page = Number(searchParams.get("page") ?? "1")
+  const limit = Number(searchParams.get("limit") ?? "10")
+  const search = searchParams.get("search") ?? ""
+  const sort = searchParams.get("sort") ?? "latest"
+
+  const skip = (page - 1) * limit
+
+  const query: any = {}
+
+  if (search) {
+    query.$or = [
+      { name: { $regex: search, $options: "i" } },
+      { slug: { $regex: search, $options: "i" } },
+      { metaTitle: { $regex: search, $options: "i" } },
+    ]
   }
+
+  let sortQuery: any = { createdAt: -1 }
+
+  if (sort === "oldest") sortQuery = { createdAt: 1 }
+  if (sort === "name_asc") sortQuery = { name: 1 }
+  if (sort === "name_desc") sortQuery = { name: -1 }
+
+  const [categories, total] = await Promise.all([
+    Category.find(query)
+      .sort(sortQuery)
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    Category.countDocuments(query),
+  ])
+
+  return NextResponse.json({
+    categories,
+    total,
+    page,
+    totalPages: Math.ceil(total / limit),
+  })
 }
 
 export async function POST(req: Request) {

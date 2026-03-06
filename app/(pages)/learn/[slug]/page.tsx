@@ -9,16 +9,23 @@ import "@/models/Chapter";
 import { getSession } from "@/utils/session";
 import { serializeCourseDetails } from "@/lib/serializers";
 
+type ProgressDoc = {
+  completedLessons?: string[];
+  lastAccessedLesson?: string;
+};
+
 export default async function Page({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
+
   await connectDb();
+
   const { slug } = await params;
   const session = await getSession();
 
-  // 🔹 Fetch Course (Fully Populated)
+  // 🔹 Fetch Course
   const courseData: any = await Course.findOne({ slug })
     .populate({
       path: "chapters",
@@ -32,21 +39,30 @@ export default async function Page({
     throw new Error("Course not found");
   }
 
-  // 🔹 Fetch User Progress
-  const progress = session?.userId
-    ? await Progress.find({
-        user: session.userId,
-        course: courseData._id,
-      }).lean()
-    : [];
+  // 🔹 Fetch Progress
+  const progress: any = session?.userId
+    ? await Progress.findOne({
+      user: session.userId,
+      course: courseData._id,
+    }).lean()
+    : null;
 
-  const completedLessonIds = progress.map((p) =>
-    p.lesson.toString()
-  );
+  const completedLessonIds =
+    progress?.completedLessons?.map((id: any) => id.toString()) ?? [];
 
-  // 🔹 Merge Progress into Lessons
+  const lastAccessedLesson =
+    progress?.lastAccessedLesson?.toString() ?? null;
+
+  // 🔹 Merge Progress into Course
   const courseWithProgress = {
     ...courseData,
+
+    progress: {
+      completedLessons: completedLessonIds,
+      lastAccessedLesson,
+      percentage: progress?.percentage ?? 0,
+    },
+
     chapters: courseData.chapters.map((chapter: any) => ({
       ...chapter,
       lessons: chapter.lessons.map((lesson: any) => ({
