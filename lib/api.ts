@@ -20,7 +20,7 @@ let isRefreshing = false
  * - These requests will wait
  * - After refresh success -> retry them
  */
-let queue: any[] = []
+let queue: { resolve: () => void; reject: (err: any) => void }[] = []
 
 
 /**
@@ -32,9 +32,17 @@ let queue: any[] = []
 const processQueue = (error: any) => {
   queue.forEach((p) => {
     if (error) p.reject(error) // refresh failed -> fail all waiting requests
-    else p.resolve(true)// refresh success -> allow waiting requests to continue
+    else p.resolve()// refresh success -> allow waiting requests to continue
   })
   queue = [] // clear queue after processing
+}
+
+const PROTECTED_PREFIXES = ["/admin", "/dashboard"]
+
+function isProtectedPage() {
+  return PROTECTED_PREFIXES.some((prefix) =>
+    window.location.pathname.startsWith(prefix)
+  )
 }
 
 api.interceptors.response.use(
@@ -42,17 +50,21 @@ api.interceptors.response.use(
   async (err) => {
     const original = err.config    // original request config (GET/POST/PUT that failed)
 
-    if (err.response?.status === 401 && !original._retry) {
+    if (
+      err.response?.status === 401 &&
+      !original._retry &&
+      !original.url?.includes("/api/auth/")
+    ) {
       original._retry = true
 
-      if (original?.url?.includes("/api/auth/refresh")) {
-        return Promise.reject(err)
-      }
-      original._retry = true
+      // If already refreshing, add this request to the queue and wait
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
-          queue.push({ resolve, reject })
-        }).then(() => api(original))
+          queue.push({
+            resolve: () => resolve(api(original)),
+            reject,
+          })
+        })
       }
 
       isRefreshing = true
@@ -61,12 +73,16 @@ api.interceptors.response.use(
         // Call refresh endpoint
         await axios.post("/api/auth/refresh", {}, { withCredentials: true })
         processQueue(null)
-        isRefreshing = false
-        return api(original)
+        return api(original) // retry original request
       } catch (refreshError) {
         processQueue(refreshError)
-        isRefreshing = false
+        //  Refresh failed — session is dead, send to login
+        if (isProtectedPage()) {
+          window.location.href = "/login"
+        }
         return Promise.reject(refreshError)
+      } finally {
+        isRefreshing = false
       }
     }
     return Promise.reject(err)

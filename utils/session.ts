@@ -1,15 +1,15 @@
 
 import { cookies } from "next/headers";
-import { verifyAccessToken, verifyRefreshToken, signAccessToken } from "./jwt";
+import { verifyAccessToken, } from "./jwt";
 
 export async function getSession() {
 
   const cookieStore = await cookies();
 
   const access = cookieStore.get("accessToken")?.value;
-  const refresh = cookieStore.get("refreshToken")?.value;
 
-  if (!refresh) return null;
+
+  if (!access) return null
 
   try {
     // Try normal access
@@ -20,32 +20,7 @@ export async function getSession() {
       email: payload.email,
     }
   } catch {
-
-    try {
-      // Access expired → try refresh
-      const refreshPayload = await verifyRefreshToken(refresh);
-
-      const newAccess = await signAccessToken({
-        userId: refreshPayload.userId,
-        email: refreshPayload.email,
-        role: refreshPayload.role
-      });
-
-      cookieStore.set("accessToken", newAccess, {
-        httpOnly: true,
-        secure: true,
-        maxAge: 60 * 15
-      });
-
-      return {
-        userId: refreshPayload.userId,
-        role: refreshPayload.role,
-        email: refreshPayload.email,
-      }
-
-    } catch {
-      // Refresh also expired
-      return null;
-    }
+    // Token expired or invalid — client's axios interceptor will refresh it
+    return null
   }
 }

@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { Lock, CreditCard } from "lucide-react"
+import { toast } from "sonner"
 
 declare global {
   interface Window {
@@ -20,6 +21,7 @@ interface CourseWithInstructor {
   _id: string
   title: string
   price: number
+  slug:string
   thumbnail?: string
   instructor: {
     _id: string
@@ -100,19 +102,20 @@ export default function CheckoutForm({ course }: CheckoutFormProps) {
               razorpayOrderId: response.razorpay_order_id,
               razorpayPaymentId: response.razorpay_payment_id,
               razorpaySignature: response.razorpay_signature,
-            }),
+              courseId:course._id,
+            })
           })
 
           const data = await verifyRes.json()
 
-          if (data.isOk) {
-            alert("Payment Successful")
+          if (data.success) {
+            toast.success("Payment Successful")
 
             // redirect to course page
-            window.location.href = `/courses/${course._id}`
+            window.location.href = `/courses/${course.slug}`
 
           } else {
-            alert("Payment verification failed")
+            toast.error("Payment verification failed")
           }
         },
 

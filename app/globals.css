@@ -1,8 +1,11 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
-@custom-variant dark (&:is(.dark *));
 
+@custom-variant dark (&:is(.dark *));
+@import "swiper/css";
+@import "swiper/css/navigation";
+@import "swiper/css/pagination";
 :root {
   --background: oklch(0.98 0.002 240);
   --foreground: oklch(0.15 0.01 240);

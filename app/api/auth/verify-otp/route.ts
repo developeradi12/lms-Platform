@@ -70,14 +70,14 @@ export async function POST(req: Request) {
 
     // 6) create tokens
     const accessToken = await signAccessToken({
-      userId: user._id,
+      userId: user._id.toString(),
       // userName:user.name,
       email: user.email,
       role: user.role,
     })
 
     const refreshToken = await signRefreshToken({
-      userId: user._id,
+      userId: user._id.toString(),
       role: user.role
     })
 

@@ -12,6 +12,8 @@ import {
   UserCircle,
   BarChart3,
   CreditCard,
+  Banana,
+  TestTube2,
 } from "lucide-react"
 
 import {
@@ -47,6 +49,8 @@ const navConfig: Record<Role, {
     { title: "Manage Courses", href: "/admin/courses", icon: Library },
     { title: "Categories", href: "/admin/categories", icon: BookOpen },
     { title: "Users", href: "/admin/users", icon: Users },
+    {title :"Banner",href:"/admin/banner",icon : Banana},
+    {title:"Testimonials",href:"/admin/testimonials",icon:TestTube2}
   ],
   STUDENT: [
     { title: "Dashboard", href: "/dashboard", icon: BarChart3 },

@@ -23,6 +23,9 @@ import { PublicNav } from "@/components/public-nav"
 import { PublicFooter } from "@/components/public-footer"
 import Reveal from "@/components/animations/Reveal"
 import { serializeCourseDetails } from "@/lib/serializers"
+import Hero from "@/components/homeSection/HeroSection"
+import Testimonial from "@/models/testimonals"
+import TestimonialsSection from "@/components/homeSection/Testimonial"
 
 const features = [
   {
@@ -51,29 +54,7 @@ const features = [
   },
 ]
 
-const testimonials = [
-  {
-    name: "Alex Turner",
-    role: "Frontend Developer at Vercel",
-    quote:
-      "LearnHub's React course completely transformed my career. The project-based approach made complex concepts click.",
-    avatar: "AT",
-  },
-  {
-    name: "Priya Sharma",
-    role: "Data Scientist at Google",
-    quote:
-      "The Python for Data Science course was exactly what I needed. Clear, structured, and deeply practical.",
-    avatar: "PS",
-  },
-  {
-    name: "Marcus Johnson",
-    role: "UX Designer at Figma",
-    quote:
-      "I went from complete beginner to landing my dream design role. The curriculum is incredibly well structured.",
-    avatar: "MJ",
-  },
-]
+
 
 const stats = [
   { value: "50,000+", label: "Active Learners" },
@@ -104,111 +85,10 @@ export default async function HomePage() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Navbar */}
-      <PublicNav/>
+      <PublicNav />
       <main className="flex-1">
-        {/* Hero Section */}
-        <section className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--primary)_0%,transparent_50%)] opacity-[0.06]" />
-          <div className="mx-auto max-w-7xl px-6 py-20 md:py-32">
-            <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
-              <div className="flex flex-col gap-6">
-                <Badge
-                  variant="secondary"
-                  className="w-fit bg-secondary text-secondary-foreground px-4 py-1.5 text-sm"
-                >
-                  New courses added weekly
-                </Badge>
-                <h1 className="text-4xl font-bold leading-tight tracking-tight text-foreground md:text-5xl lg:text-6xl font-[family-name:var(--font-heading)] text-balance">
-                  Master new skills.{" "}
-                  <span className="text-primary">Advance your career.</span>
-                </h1>
-                <p className="max-w-lg text-lg text-muted-foreground leading-relaxed">
-                  Join thousands of learners building real-world skills with
-                  expert-led, project-based courses in development, design, data
-                  science, and more.
-                </p>
-                <div className="flex flex-wrap items-center gap-3 pt-2">
-                  <Button
-                    size="lg"
-                    className="bg-primary text-primary-foreground hover:bg-primary/90"
-                    asChild
-                  >
-                    <Link href="/courses">
-                      Explore Courses
-                      <ArrowRight className="ml-2 size-4" />
-                    </Link>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className="border-border text-foreground hover:bg-secondary"
-                    asChild
-                  >
-                    <Link href="/courses">
-                      <Play className="mr-2 size-4" />
-                      Watch Demo
-                    </Link>
-                  </Button>
-                </div>
-                <div className="flex items-center gap-6 pt-4">
-                  <div className="flex -space-x-2">
-                    {["AT", "PS", "MJ", "LW"].map((initials) => (
-                      <div
-                        key={initials}
-                        className="flex size-8 items-center justify-center rounded-full border-2 border-background bg-primary text-[10px] font-semibold text-primary-foreground"
-                      >
-                        {initials}
-                      </div>
-                    ))}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1">
-                      {[1, 2, 3, 4, 5].map((i) => (
-                        <Star
-                          key={i}
-                          className="size-3.5 fill-chart-3 text-chart-3"
-                        />
-                      ))}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Trusted by 50,000+ learners
-                    </p>
-                  </div>
-                </div>
-              </div>
 
-              {/* Hero Image */}
-              <div className="relative hidden lg:block">
-                <div className="overflow-hidden rounded-2xl border border-border shadow-2xl">
-                  <Image
-                    src="/images/hero-students.jpg"
-                    alt="Students learning together in a modern workspace"
-                    width={600}
-                    height={420}
-                    className="object-cover w-full"
-                    priority
-                  />
-                </div>
-                {/* Floating Card */}
-                <div className="absolute -bottom-6 -left-6 rounded-xl border border-border bg-card p-4 shadow-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="flex size-10 items-center justify-center rounded-full bg-accent/10">
-                      <CheckCircle className="size-5 text-accent" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-card-foreground">
-                        Course Completed
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        UI/UX Design Fundamentals
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+        <Hero />
 
         {/* Stats Bar */}
         <Reveal>
@@ -340,53 +220,8 @@ export default async function HomePage() {
           </section>
         </Reveal>
 
-        {/* Testimonials */}
         <Reveal delay={100}>
-          <section className="mx-auto max-w-7xl px-6 py-20 md:py-28">
-            <div className="mx-auto max-w-2xl text-center">
-              <h2 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl font-[family-name:var(--font-heading)] text-balance">
-                Loved by learners worldwide
-              </h2>
-              <p className="mt-4 text-lg text-muted-foreground">
-                See what our students have to say about their learning experience.
-              </p>
-            </div>
-            <div className="mt-16 grid grid-cols-1 gap-6 md:grid-cols-3">
-              {testimonials.map((t) => (
-                <Card
-                  key={t.name}
-                  className="border-border bg-card"
-                >
-                  <CardContent className="flex flex-col gap-4 p-6">
-                    <div className="flex items-center gap-1">
-                      {[1, 2, 3, 4, 5].map((i) => (
-                        <Star
-                          key={i}
-                          className="size-4 fill-chart-3 text-chart-3"
-                        />
-                      ))}
-                    </div>
-                    <p className="text-sm text-card-foreground leading-relaxed">
-                      &ldquo;{t.quote}&rdquo;
-                    </p>
-                    <div className="flex items-center gap-3 pt-2">
-                      <div className="flex size-10 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
-                        {t.avatar}
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-card-foreground">
-                          {t.name}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {t.role}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </section>
+          <TestimonialsSection/>
         </Reveal>
 
         {/* CTA */}

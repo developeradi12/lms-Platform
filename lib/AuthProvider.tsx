@@ -26,11 +26,16 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const res = await api.get("/api/auth/me");
         setUser(res.data.user);
+      } catch {
+        //  401 = not logged in, totally fine on public pages
+        setUser(null)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
     } fetchUser();
   }, []);
+
+  
   const logout = async () => {
     await api.post("/api/auth/logout");
     setUser(null);

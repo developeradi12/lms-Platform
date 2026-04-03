@@ -20,8 +20,7 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       )
     }
-
-    const user = await User.findOne({ email })
+    const user = await User.findOne({ email }).select("+password +refreshToken")
 
     if (!user) {
       return NextResponse.json(
@@ -55,7 +54,14 @@ export async function POST(req: NextRequest) {
     await user.save()
 
     const res = NextResponse.json(
-      { success: true, message: "Login success" , user},
+      {
+        success: true, message: "Login success",
+        user: {
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
+      },
       { status: 200 }
     )
 
