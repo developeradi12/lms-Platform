@@ -2,9 +2,9 @@
 import connectDb from "@/lib/db"
 import User from "@/models/User"
 import { cookies } from "next/headers";
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 
-export async function PATCH(req: Request, context: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
 
     await connectDb();
@@ -57,7 +57,7 @@ export async function GET(
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
     const { id } = await params;  // ✅ no await
-    console.log("from server", id)
+    // console.log("from server", id)
     const user = await User.findById(id).select("-password")
       .populate({
         path: "wishlist",

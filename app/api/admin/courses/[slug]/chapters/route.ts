@@ -18,7 +18,7 @@ export async function GET(req: Request,
         }
 
         const { slug } = await params
-        console.log("testing", slug);
+        // console.log("testing", slug);
 
         const course = await Course.findOne({ slug });
         if (!course) {
@@ -40,7 +40,7 @@ export async function GET(req: Request,
         )
         return NextResponse.json({ success: true, chapters: chaptersWithCount })
     } catch (error: any) {
-        console.log("get error", error);
+        // console.log("get error", error);
         return NextResponse.json(
             { success: false, message: error.message || "Failed to fetch chapters" },
             { status: 500 }

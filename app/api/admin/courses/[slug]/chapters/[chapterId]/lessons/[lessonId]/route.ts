@@ -20,9 +20,9 @@ export async function GET(req: Request, { params }: Params) {
     }
 
     const { lessonId } = await params
-    console.log("GET lessonId", lessonId)
+    // console.log("GET lessonId", lessonId)
     const lesson = await Lesson.findOne({ slug: lessonId }).lean()
-    console.log("found lesson", lesson)
+    // console.log("found lesson", lesson)
     if (!lesson) {
       return NextResponse.json(
         { success: false, message: "Lesson not found" },

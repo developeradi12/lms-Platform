@@ -30,7 +30,7 @@ type FormValues = z.input<typeof formSchema>
 export default function CreateChapterPage() {
   const router = useRouter()
   const {slug} = useParams();
-  console.log("slug issue",slug)
+  // console.log("slug issue",slug)
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {

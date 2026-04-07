@@ -1,19 +1,37 @@
-import { getAuthUser } from "@/lib/getAuthUser";
-import { SiteHeader } from "../_components/site-header";
-import DashboardContent from "./_componets/DashboardContent";
-import { getUserEnrollments } from "@/lib/service/enrollment";
+import DashboardContent from "./_componets/DashboardContent"
+import { cookies } from "next/headers"
 
 export default async function DashboardPage() {
-  const user = await getAuthUser()
-  const enrollments = await getUserEnrollments(user._id)
 
-  const serialized = JSON.parse(JSON.stringify(enrollments))
-  return (
-    <>
-      <DashboardContent
-        user={user}
-        enrollments={serialized}
-      />
-    </>
+  const cookieStore = await cookies()
+  const cookieHeader = cookieStore.toString()
+
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/api/user/dashboard`,
+    {
+      cache: "no-store",
+      headers: {
+        cookie: cookieHeader,
+      },
+    }
   )
+
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch dashboard data")
+  }
+
+  const data = await res.json()
+
+  // console.log("data", data)
+  return (
+    <DashboardContent
+      user={data.user}
+      enrollments={data.enrollments}
+      stats={data.stats}
+      weeklyActivity={data.spendingChart}
+      orders={data.orders}
+    />
+  )
+
 }

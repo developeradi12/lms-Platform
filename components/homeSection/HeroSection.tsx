@@ -30,7 +30,6 @@ export default function Hero() {
       try {
         const res = await fetch("/api/admin/banner")
         const json = await res.json()
-        console.log("json", json);
         setBanners(json.banners ?? [])
       } catch {
         console.error("Failed to fetch banners")

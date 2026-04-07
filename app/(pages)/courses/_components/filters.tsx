@@ -1,6 +1,7 @@
 "use client"
 
-import { CategorySerialized } from "@/types"
+
+import { CategorySerialized } from "@/types/category"
 import { useRouter, useSearchParams } from "next/navigation"
 
 type Props = {

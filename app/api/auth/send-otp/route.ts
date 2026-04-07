@@ -56,7 +56,7 @@ export async function POST(req: Request) {
       { status: 200 }
     )
   } catch (error: any) {
-    console.log("SEND OTP ERROR:", error)
+    // console.log("SEND OTP ERROR:", error)
     return NextResponse.json(
       { success: false, message: error.message || "Internal Server Error" },
       { status: 500 }

@@ -322,8 +322,9 @@ export default function CourseDetailsClient({ course, isEnrolled = false, isWish
           </div>
         </section>
       </Reveal >
+
       {/* REVIEWS */}
-      < Reveal delay={100} >
+      {/* < Reveal delay={100} >
         <section className={"max-w-7xl mx-auto px-6 py-20 border-t"}>
           <h2 className="text-2xl font-bold mb-10">Student Reviews</h2>
 
@@ -353,7 +354,8 @@ export default function CourseDetailsClient({ course, isEnrolled = false, isWish
             ))}
           </div>
         </section>
-      </Reveal >
+      </Reveal > */}
+
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-4xl p-0 overflow-hidden">
           <DialogHeader className="p-4 border-b">

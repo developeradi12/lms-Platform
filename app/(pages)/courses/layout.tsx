@@ -4,19 +4,19 @@ import connectDb from "@/lib/db";
 import { getSession } from "@/utils/session";
 
 
+
+
 export default async function PagesLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
   await connectDb();
-  const session = await getSession();
-  const role = session?.role || null;
 
   return (
     <div className="min-h-screen flex flex-col">
       {/* Navbar */}
-      <PublicNav role={role} />
+      <PublicNav />
 
       {/* Page Content */}
       <main className="flex-1">

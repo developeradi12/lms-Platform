@@ -64,7 +64,7 @@ DTO → compile time safety */
       toast.success("Category uploaded successfully")
       router.push("/admin/categories")
     } catch (error: any) {
-      console.log(error.response?.data);
+      // console.log(error.response?.data);
       toast.error(error?.response?.data?.message || "Something went wrong")
     } finally {
       setLoading(false)

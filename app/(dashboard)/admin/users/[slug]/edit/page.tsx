@@ -42,7 +42,7 @@ export default function EditUserPage() {
                 ? params.slug[0]
                 : ""
     const id = slug?.split("-").pop()
-    console.log("from frontend", id);
+    // console.log("from frontend", id);
 
     const router = useRouter()
 

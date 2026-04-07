@@ -31,6 +31,7 @@ import {
 
 import { useRouter } from "next/navigation"
 import api from "@/lib/api"
+import { toast } from "sonner"
 
 
 export function NavUser({
@@ -53,7 +54,7 @@ export function NavUser({
         router.refresh();
       }
     } catch (error) {
-      console.log("Logout error:", error);
+      toast.error( "Something went wrong in nav")
     }
   };
 

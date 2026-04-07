@@ -9,6 +9,7 @@ import { getCourses } from "@/lib/service/course"
 import Category from "@/models/Category"
 
 import { serializeCategory } from "@/lib/serializers"
+import Image from "next/image"
 
 interface Props {
   searchParams: Promise<{
@@ -46,14 +47,27 @@ export default async function CoursesPage({ searchParams }: Props) {
       <div className="min-h-screen bg-background">
 
         {/* ---------------- HEADER SECTION ---------------- */}
-        <section className="border-b bg-card">
-          <div className="max-w-7xl mx-auto px-6 py-12">
+        <section className="relative w-full h-[330px] md:h-[350px]">
+          <Image
+            src="/banner1.jpg"
+            alt="Courses Banner"
+            fill
+            priority
+            className="object-cover"
+          />
 
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
+          {/* Overlay */}
+          <div className="absolute inset-0 bg-blue-900/60" />
+
+          {/* Content */}
+          <div className="relative z-10 max-w-7xl mx-auto px-6 h-full flex flex-col justify-center">
+
+
+            <h1 className="text-3xl md:text-5xl font-bold text-white tracking-tight">
               Course Catalog
             </h1>
 
-            <p className="mt-3 text-muted-foreground max-w-2xl">
+            <p className="mt-3 text-white/90 max-w-2xl">
               Browse our full library of expert-led courses. Find the perfect
               course to advance your skills and career.
             </p>
@@ -70,7 +84,6 @@ export default async function CoursesPage({ searchParams }: Props) {
               <div className="w-full md:w-auto">
                 <Filters categories={categories} />
               </div>
-
             </div>
           </div>
         </section>

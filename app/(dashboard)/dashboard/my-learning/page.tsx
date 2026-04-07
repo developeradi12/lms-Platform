@@ -31,7 +31,7 @@ export default function MyCoursesPage() {
             try {
 
                 const res = await api.get("/api/user/enroll")
-                console.log("API RESPONSE:", res.data)
+                // console.log("API RESPONSE:", res.data)
                 if (res.data.success) {
                     setCourses(res.data.data)
                 }

@@ -16,7 +16,7 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ slug:
         }
 
         const slug = await params;
-        console.log("delete id", slug);
+        // console.log("delete id", slug);
 
         const deletedCategory = await Category.findOneAndDelete(slug)
 
@@ -121,8 +121,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
         }
 
         const slug = await params;
-        console.log(slug);
-        const category = await Category.findOne(slug)
+        // console.log(slug);
+        const category = await Category.findOne({ slug })
 
         if (!category) {
             return NextResponse.json(

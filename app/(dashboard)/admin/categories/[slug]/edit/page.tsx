@@ -22,7 +22,7 @@ export default function EditCategoryPage() {
     const router = useRouter()
     const params = useParams<CategorySlug>()
     const slug = params.slug
-    console.log("check", slug);
+    // console.log("check", slug);
     const [loading, setLoading] = useState(true)
 
     const form =useForm<UpdateCategoryform>({

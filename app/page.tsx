@@ -160,12 +160,12 @@ export default async function HomePage() {
                 </div>
                 <Button
                   variant="outline"
-                  className="border-border text-foreground hover:bg-card"
+                  className="border-border text-foreground hover:text-black"
                   asChild
                 >
                   <Link href="/courses">
                     View All Courses
-                    <ArrowRight className="ml-2 size-4" />
+                    <ArrowRight className="ml-2 size-4 " />
                   </Link>
                 </Button>
               </div>

@@ -1,7 +1,6 @@
 "use client"
 
 import {
-  Award,
   BookOpen,
   CheckCircle,
   Clock,
@@ -29,63 +28,65 @@ import {
 } from "recharts"
 
 import Link from "next/link"
-import {  UserSerialize } from "@/types/user"
+import { UserSerialize } from "@/types/user"
 import { Enrollments } from "@/types/enrollment"
 
+/* ---------- TYPES ---------- */
+
+interface Order {
+  _id: string
+  amount: number
+  createdAt: string
+  course: {
+    title: string
+  }
+}
 
 interface Props {
   user: UserSerialize
   enrollments: Enrollments[]
+  stats: {
+    enrolledCourses: number
+    completedCourses: number
+    totalHours: number
+    totalSpent: number
+  }
+  weeklyActivity: {
+    month: string
+    amount: number
+  }[]
+  orders: Order[]
 }
+
+/* ---------- COMPONENT ---------- */
 
 export default function DashboardContent({
   user,
-  enrollments,
+  stats,
+  weeklyActivity,
+  orders,
 }: Props) {
-  const streak = 7
 
-  const weeklyActivity = [
-    { day: "Mon", hours: 1 },
-    { day: "Tue", hours: 2 },
-    { day: "Wed", hours: 0 },
-    { day: "Thu", hours: 3 },
-    { day: "Fri", hours: 2 },
-    { day: "Sat", hours: 4 },
-    { day: "Sun", hours: 1 },
-  ]
-  const enrolledCourses = enrollments.length
+  const {
+    enrolledCourses = 0,
+    completedCourses = 0,
+    totalHours = 0,
+    totalSpent = 0,
+  } = stats || {}
 
-  const completedCourses = enrollments.filter(
-    (e) => e.progress === 100
-  ).length
-
-  const totalHours = Math.round(
-    enrollments.reduce(
-      (acc, e) => acc + (e.totalDuration || 0),
-      0
-    ) / 60
-  )
-
-  const overallProgress = enrolledCourses
-    ? Math.round(
-      enrollments.reduce(
-        (acc, e) => acc + (e.progress || 0),
-        0
-      ) / enrolledCourses
-    )
-    : 0
+  const topOrders = orders?.slice(0, 2)
 
   return (
     <div className="flex flex-col gap-6 p-4 md:p-6">
 
-      {/* Welcome Section */}
+      {/* Welcome */}
       <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
         <div>
           <h2 className="text-2xl font-bold">
-            Welcome back, {user.name}
+            Welcome back, {user?.name || "User"}
           </h2>
           <p className="text-muted-foreground">
-            You're on a {streak}-day learning streak 🔥 Keep going!
+            Keep learning and growing 🚀
           </p>
         </div>
 
@@ -117,112 +118,123 @@ export default function DashboardContent({
 
         <StatCard
           icon={<Flame className="size-5" />}
-          label="Day Streak"
-          value={streak}
-          subtext="Keep consistency!"
+          label="Total Spent"
+          value={formatCurrency(totalSpent)}
         />
 
       </div>
 
-      {/* Charts + Achievements */}
+      {/* Chart + Orders */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
-        {/* Weekly Activity */}
+        {/* Chart */}
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="size-5 text-primary" />
-              Weekly Activity
+              Monthly Spending
             </CardTitle>
           </CardHeader>
 
           <CardContent>
-            <ResponsiveContainer width="100%" height={240}>
-              <BarChart data={weeklyActivity}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="day" />
-                <YAxis unit="h" />
-                <Tooltip
-                  formatter={(value: number) => [`${value}h`, "Study Time"]}
-                />
-                <Bar
-                  dataKey="hours"
-                  fill="hsl(var(--primary))"
-                  radius={[6, 6, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
+            {weeklyActivity?.length === 0 ? (
+              <div className="h-[240px] flex items-center justify-center text-muted-foreground text-sm">
+                No spending data yet 📊
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={240}>
+                <BarChart data={weeklyActivity}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip
+                    formatter={(value: number) => [
+                      formatCurrency(value),
+                      "Spent",
+                    ]}
+                  />
+                  <Bar
+                    dataKey="amount"
+                    fill="hsl(var(--primary))"
+                    radius={[6, 6, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
 
-        {/* Achievements */}
+        {/* Orders */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Award className="size-5 text-accent" />
-              Achievements
-            </CardTitle>
+            <CardTitle>Recent Orders</CardTitle>
           </CardHeader>
 
-          <CardContent className="flex flex-col gap-4">
+          <CardContent className="space-y-4">
+            {topOrders?.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No orders yet
+              </p>
+            ) : (
+              topOrders.map((order) => (
+                <div
+                  key={order._id}
+                  className="flex justify-between items-center border-b pb-2 last:border-none"
+                >
+                  <div>
+                    <p className="text-sm font-medium">
+                      {order.course?.title}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(order.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
 
-            <AchievementItem
-              icon={<Flame />}
-              title="Hot Streak"
-              subtitle={`${streak} days in a row`}
-            />
-
-            <AchievementItem
-              icon={<CheckCircle />}
-              title="Course Finisher"
-              subtitle={`${completedCourses} courses completed`}
-            />
-
-            <AchievementItem
-              icon={<TrendingUp />}
-              title="Progress Master"
-              subtitle={`${overallProgress}% average progress`}
-            />
-
+                  <p className="font-semibold text-green-600">
+                    {formatCurrency(order.amount)}
+                  </p>
+                </div>
+              ))
+            )}
           </CardContent>
         </Card>
 
       </div>
-
 
     </div>
   )
 }
 
-/* --- Small Reusable Components --- */
+/* ---------- STAT CARD ---------- */
 
-function StatCard({ icon, label, value, subtext }: any) {
+function StatCard({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode
+  label: string
+  value: string | number
+}) {
   return (
-    <Card>
+    <Card className="hover:shadow-md transition">
       <CardContent className="p-6 flex flex-col gap-2">
         <div className="flex justify-between items-center">
           <p className="text-sm text-muted-foreground">{label}</p>
           {icon}
         </div>
         <p className="text-3xl font-bold">{value}</p>
-        {subtext && (
-          <p className="text-xs text-muted-foreground">{subtext}</p>
-        )}
       </CardContent>
     </Card>
   )
 }
 
-function AchievementItem({ icon, title, subtitle }: any) {
-  return (
-    <div className="flex items-center gap-3 bg-secondary p-3 rounded-lg">
-      <div className="h-10 w-10 flex items-center justify-center bg-primary/10 rounded-full">
-        {icon}
-      </div>
-      <div>
-        <p className="text-sm font-medium">{title}</p>
-        <p className="text-xs text-muted-foreground">{subtitle}</p>
-      </div>
-    </div>
-  )
+/* ---------- UTIL ---------- */
+
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(value)
 }

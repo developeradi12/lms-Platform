@@ -4,6 +4,9 @@ import Enrollment from "@/models/Enrollment"
 import { getSession } from "@/utils/session"
 import connectDb from "@/lib/db"
 
+import { Course } from "@/models/Course"
+import Order from "@/models/Order"
+
 export async function POST(req: Request) {
   try {
     await connectDb()
@@ -31,6 +34,34 @@ export async function POST(req: Request) {
     }
     const payload = await getSession()
     const Id = payload?.userId
+
+
+    //fetch course 
+    const course = await Course.findById(courseId)
+    if (!course) {
+      return NextResponse.json(
+        { success: false, message: "Course not found" },
+        { status: 404 }
+      )
+    }
+
+    const amount = course.price
+
+    //  Prevent Duplicate Orders
+    const existingOrder = await Order.findOne({
+      paymentId: razorpayPaymentId
+    })
+    if (!existingOrder) {
+      //  Create Order 
+      await Order.create({
+        user: Id,
+        course: courseId,
+        amount:amount,
+        paymentId: razorpayPaymentId,
+        orderId: razorpayOrderId,
+       status: "SUCCESS",
+      })
+    }
 
     //  Prevent duplicate enrollment
     const already = await Enrollment.findOne({

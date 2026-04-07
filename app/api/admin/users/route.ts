@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
     const query: any = {
       role: "STUDENT",
     }
-    console.log("")
+    // console.log("")
     if (search) {
       query.$or = [
         { name: { $regex: search, $options: "i" } },
@@ -46,9 +46,9 @@ export async function GET(req: NextRequest) {
       .skip(skip)
       .limit(limit)
       .lean();
-    console.log(users);
+    // console.log(users);
     const totalStudents = await User.countDocuments(query);
-    console.log(totalStudents);
+    // console.log(totalStudents);
     return NextResponse.json({
       users,
       totalStudents,

@@ -13,9 +13,9 @@ export async function GET(
 ) {
     try {
         await connectDb();
-        console.log("DB connected");
+        // console.log("DB connected");
         const { slug } = await params;
-        console.log("slug", slug);
+        // console.log("slug", slug);
         const blog: any = await Blog.findOne({ slug }).lean();
 
         if (!blog) {

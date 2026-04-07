@@ -55,7 +55,7 @@ type Chapter = {
 export default function AdminChaptersPage() {
 
   const { slug } = useParams()
-  console.log(slug);
+  // console.log(slug);
 
   const [search, setSearch] = useState("")
   const [loading, setLoading] = useState(true)
@@ -67,7 +67,7 @@ export default function AdminChaptersPage() {
       setLoading(true)
 
       const res = await api.get(`/api/admin/courses/${slug}/chapters`)
-      console.log("fetch", res);
+      // console.log("fetch", res);
       setChapters(res.data?.chapters || [])
     } catch (error: any) {
       toast.error(error?.response?.data?.message || "Failed to load chapters")

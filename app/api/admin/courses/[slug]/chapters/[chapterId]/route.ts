@@ -22,7 +22,7 @@ export async function PATCH(req: Request, { params }: Params) {
         }
 
         const { chapterId } = await params
-        console.log("jeee", chapterId);
+        // console.log("jeee", chapterId);
         const body = await req.json()
 
         const { title, description } = body
@@ -49,7 +49,7 @@ export async function PATCH(req: Request, { params }: Params) {
             chapter: updated,
         })
     } catch (error: any) {
-        console.log(error);
+        // console.log(error);
         return NextResponse.json(
             { success: false, message: error.message || "Update failed" },
             { status: 500 }
@@ -107,7 +107,7 @@ export async function GET(req: Request, { params }: Params) {
         }
 
         const { chapterId } = await params
-        console.log("chapterid", chapterId);
+        // console.log("chapterid", chapterId);
         const slug = chapterId
         const chapter = await Chapter.findOne({ slug }).lean()
 

@@ -147,7 +147,7 @@ export default function EditCourseForm({ course, categories }: Props) {
 
                     <form
                         onSubmit={form.handleSubmit(onSubmit, (errors) => {
-                            console.log("Form Errors:", errors)
+                            // console.log("Form Errors:", errors)
                         })}
                         className="space-y-6"
                     >

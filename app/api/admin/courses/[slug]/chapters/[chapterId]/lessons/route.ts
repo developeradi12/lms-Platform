@@ -21,9 +21,9 @@ export async function GET(req: Request, { params }: Params) {
     }
 
     const { chapterId } = await params
-    console.log("GET chapterId", chapterId)
+    // console.log("GET chapterId", chapterId)
     const chapter = await Chapter.findOne({ slug: chapterId });
-    console.log("found chapter", chapter)
+    // console.log("found chapter", chapter)
     const lessons = await Lesson.find({ chapter: chapter?._id })
       .sort({ order: 1, createdAt: 1 })
       .lean()
@@ -50,7 +50,7 @@ export async function POST(req: Request, { params }: Params) {
     const { chapterId } = await params
 
     const chapter = await Chapter.findOne({ slug: chapterId });
-    console.log("chapter", chapter);
+    // console.log("chapter", chapter);
 
     // Check if chapter exists
     // const chapter = await Chapter.findOne({ slug: chapterSlug }).select("_id").lean()
@@ -74,7 +74,7 @@ export async function POST(req: Request, { params }: Params) {
 
     // Get last lesson order
     const LastLesson = await Lesson.findOne({ chapter: chapter._id }).sort({ order: -1 })
-    console.log("LastLesson", LastLesson);
+    // console.log("LastLesson", LastLesson);
 
     const finalOrder = (LastLesson?.order ?? 0) + 1
 

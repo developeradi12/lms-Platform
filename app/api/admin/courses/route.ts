@@ -71,7 +71,7 @@ export async function GET() {
     // )    //issue it does N queries so total queries 1+n it too slow 
     return NextResponse.json({ success: true, courses }, { status: 200 })
   } catch (error) {
-    console.log(error);
+    // console.log(error);
     return NextResponse.json(
       { success: false, message: "Internal Server Error" },
       { status: 500 }

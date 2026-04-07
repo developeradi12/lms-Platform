@@ -66,7 +66,7 @@ export default function AdminLessonsPage() {
       setLoading(true)
 
       const res = await api.get(`/api/admin/courses/${slug}/chapters/${chapterId}/lessons`)
-      console.log("fetchlessons res",res.data)
+      // console.log("fetchlessons res",res.data)
       setLessons(res.data?.lessons || [])
     } catch (error: any) {
       toast.error(error?.response?.data?.message || "Failed to load lessons")

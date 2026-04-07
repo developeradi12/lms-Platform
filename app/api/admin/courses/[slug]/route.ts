@@ -23,7 +23,7 @@ export async function GET(
     }
 
     const { slug } = await params;
-    console.log(slug);
+    // console.log(slug);
 
     const course = await Course.findOne({ slug })
       .populate("categories", "name")
@@ -47,7 +47,7 @@ export async function GET(
 
     return NextResponse.json({ success: true, course }, { status: 200 })
   } catch (error: any) {
-    console.log("GET COURSES ERROR:", error)
+    // console.log("GET COURSES ERROR:", error)
 
     return NextResponse.json(
       { success: false, message: error.message },
@@ -159,7 +159,7 @@ export async function PUT(
       { status: 200 }
     )
   } catch (error: any) {
-    console.log("erorr", error);
+    // console.log("erorr", error);
     return NextResponse.json(
       { success: false, message: error.message },
       { status: 500 }
@@ -181,8 +181,8 @@ export async function DELETE(
     }
 
     const slug = await params;
-    console.log("delete id", slug);
-    const deleted = await Course.findOneAndDelete(slug)
+    // console.log("delete id", slug);
+    const deleted = await Course.findOneAndDelete({ slug })
 
     if (!deleted) {
       return NextResponse.json(

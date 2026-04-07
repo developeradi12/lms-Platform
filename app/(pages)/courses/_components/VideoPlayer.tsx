@@ -5,7 +5,9 @@ import { motion } from "framer-motion"
 import { getYoutubeId } from "@/lib/getYoutube"
 import api from "@/lib/api"
 import { PlayCircle } from "lucide-react"
-import { LessonSerialized } from "@/types"
+import { LessonSerialized } from "@/types/lesson"
+import { toast } from "sonner"
+
 
 interface Props {
   lesson: LessonSerialized | null
@@ -91,7 +93,7 @@ export default function VideoPlayer({ lesson }: Props) {
               watchedSeconds: currentTime,
             })
           } catch {
-            console.log("Progress save failed")
+            toast.error("Progress save failed")
           }
         }
         // 🎉 Auto complete at 90%
@@ -106,7 +108,7 @@ export default function VideoPlayer({ lesson }: Props) {
               clearInterval(intervalRef.current)
             }
           } catch {
-            console.log("Completion update failed")
+            toast.error("Completion update failed")
           }
         }
       }, 5000)

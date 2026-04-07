@@ -15,7 +15,7 @@ export default function AdminDashboard() {
     const fetchData = async () => {
       try {
         const res = await api.get("/api/admin/dashboard")
-        console.log("dahsboard data",res.data)
+        // console.log("dahsboard data",res.data)
         setData(res.data)
       } catch (error) {
         console.error(error)
@@ -39,8 +39,8 @@ export default function AdminDashboard() {
       <RevenueChart data={data.revenueChart} />
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        {/* <RecentEnrollments data={data.recentEnrollments} /> */}
-        {/* <TopSellingCourses data={data.topSellingCourses} /> */}
+        <RecentEnrollments data={data.recentEnrollments} />
+        <TopSellingCourses data={data.topSellingCourses} />
       </div>
 
     </div>

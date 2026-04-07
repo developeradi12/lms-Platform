@@ -12,8 +12,9 @@ import {
   UserCircle,
   BarChart3,
   CreditCard,
-  Banana,
-  TestTube2,
+  MessageSquareQuote,
+  Image,
+  ListOrdered,
 } from "lucide-react"
 
 import {
@@ -49,8 +50,9 @@ const navConfig: Record<Role, {
     { title: "Manage Courses", href: "/admin/courses", icon: Library },
     { title: "Categories", href: "/admin/categories", icon: BookOpen },
     { title: "Users", href: "/admin/users", icon: Users },
-    {title :"Banner",href:"/admin/banner",icon : Banana},
-    {title:"Testimonials",href:"/admin/testimonials",icon:TestTube2}
+    {title:"Orders",href:"/admin/orders",icon:ListOrdered},
+    { title: "Banner", href: "/admin/banner", icon: Image },
+    { title: "Testimonials", href: "/admin/testimonials", icon: MessageSquareQuote }
   ],
   STUDENT: [
     { title: "Dashboard", href: "/dashboard", icon: BarChart3 },
@@ -94,7 +96,7 @@ export function AppSidebar({
 
   const pathname = usePathname()
   const mainNav = navConfig[role] ?? navConfig.STUDENT
-  const secNav = accountNav[role]??accountNav.STUDENT
+  const secNav = accountNav[role] ?? accountNav.STUDENT
   const isActive = (href: string) => {
     if (href === "/dashboard" || href === "/admin") {
       return pathname === href

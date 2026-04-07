@@ -36,6 +36,8 @@ import { Button } from "@/components/ui/button"
 
 import { Eye, EyeOff } from "lucide-react"
 import api from "@/lib/api"
+import { PublicNav } from "@/components/public-nav"
+import { PublicFooter } from "@/components/public-footer"
 
 const loginSchema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -73,7 +75,7 @@ export default function Login() {
         router.push("/dashboard")
       }
     } catch (error: any) {
-      toast.error( "Login failed")
+      toast.error("Login failed")
       router.push("/");
     } finally {
       setLoading(false)
@@ -81,93 +83,98 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6">
-      <Card className="w-full max-w-md rounded-2xl">
-        <CardHeader>
-          <CardTitle className="text-2xl">Login</CardTitle>
-          <CardDescription>Login to access your dashboard</CardDescription>
-        </CardHeader>
+    <>
+      <PublicNav />
+      <div className="min-h-screen flex items-center justify-center p-6">
+        <Card className="w-full max-w-md rounded-2xl">
+          <CardHeader>
+            <CardTitle className="text-2xl">Login</CardTitle>
+            <CardDescription>Login to access your dashboard</CardDescription>
+          </CardHeader>
 
-        <CardContent>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-            <FieldGroup className="space-y-4">
-              {/* Email */}
-              <Field data-invalid={!!errors.email && isSubmitted}>
-                <FieldLabel htmlFor="email">Email</FieldLabel>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="example@gmail.com"
-                  {...form.register("email")}
-                  aria-invalid={!!errors.email && isSubmitted}
-                  className="focus-visible:ring-2 rounded-xl"
-                />
-                {errors.email && isSubmitted && (
-                  <FieldError errors={[errors.email]} />
-                )}
-              </Field>
-
-              {/* Password */}
-              <Field data-invalid={!!errors.password && isSubmitted}>
-                <FieldLabel htmlFor="password">Password</FieldLabel>
-
-                <div className="relative">
+          <CardContent>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+              <FieldGroup className="space-y-4">
+                {/* Email */}
+                <Field data-invalid={!!errors.email && isSubmitted}>
+                  <FieldLabel htmlFor="email">Email</FieldLabel>
                   <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Enter your password"
-                    {...form.register("password")}
-                    aria-invalid={!!errors.password && isSubmitted}
-                    className="focus-visible:ring-2 rounded-xl pr-10"
+                    id="email"
+                    type="email"
+                    placeholder="example@gmail.com"
+                    {...form.register("email")}
+                    aria-invalid={!!errors.email && isSubmitted}
+                    className="focus-visible:ring-2 rounded-xl"
                   />
+                  {errors.email && isSubmitted && (
+                    <FieldError errors={[errors.email]} />
+                  )}
+                </Field>
 
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((prev) => !prev)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                {/* Password */}
+                <Field data-invalid={!!errors.password && isSubmitted}>
+                  <FieldLabel htmlFor="password">Password</FieldLabel>
+
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Enter your password"
+                      {...form.register("password")}
+                      aria-invalid={!!errors.password && isSubmitted}
+                      className="focus-visible:ring-2 rounded-xl pr-10"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                    >
+                      {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+                    </button>
+                  </div>
+
+                  {errors.password && isSubmitted && (
+                    <FieldError errors={[errors.password]} />
+                  )}
+                </Field>
+
+                {/* Submit Button (MUST be inside form) */}
+                <Button
+                  type="submit"
+                  className="w-full rounded-xl"
+                  disabled={loading}
+                >
+                  {loading ? "Signing in..." : "Login"}
+                </Button>
+
+                {/* Links */}
+                <div className="flex items-center justify-between text-sm pt-2">
+                  <Link
+                    href="/auth/forgot-password"
+                    className="text-muted-foreground hover:underline"
                   >
-                    {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
-                  </button>
+                    Forgot password?
+                  </Link>
+
+                  <Link
+                    href="/sign_up"
+                    className="font-medium hover:underline"
+                  >
+                    Sign Up
+                  </Link>
                 </div>
+              </FieldGroup>
+            </form>
+          </CardContent>
 
-                {errors.password && isSubmitted && (
-                  <FieldError errors={[errors.password]} />
-                )}
-              </Field>
+          <CardFooter className="justify-center text-xs text-muted-foreground">
+            LMS Platform
+          </CardFooter>
+        </Card>
+      </div>
+      <PublicFooter />
+    </>
 
-              {/* Submit Button (MUST be inside form) */}
-              <Button
-                type="submit"
-                className="w-full rounded-xl"
-                disabled={loading}
-              >
-                {loading ? "Signing in..." : "Login"}
-              </Button>
-
-              {/* Links */}
-              <div className="flex items-center justify-between text-sm pt-2">
-                <Link
-                  href="/auth/forgot-password"
-                  className="text-muted-foreground hover:underline"
-                >
-                  Forgot password?
-                </Link>
-
-                <Link
-                  href="/sign_up"
-                  className="font-medium hover:underline"
-                >
-                  Sign Up
-                </Link>
-              </div>
-            </FieldGroup>
-          </form>
-        </CardContent>
-
-        <CardFooter className="justify-center text-xs text-muted-foreground">
-          LMS Platform
-        </CardFooter>
-      </Card>
-    </div>
   )
 }
