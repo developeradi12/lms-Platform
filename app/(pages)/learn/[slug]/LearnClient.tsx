@@ -247,6 +247,7 @@ export default function LearnClient({ course }: Props) {
                         onClick={handleManualComplete}
                         disabled={currentLesson.isComplete || loading}
                         variant="secondary"
+                        className="cursor-pointer"
                       >
 
                         {currentLesson.isComplete
@@ -256,6 +257,55 @@ export default function LearnClient({ course }: Props) {
                             : "Mark as Completed"}
 
                       </Button>
+
+                      {/* ---------------- RESOURCES ---------------- */}
+
+                      <div className="space-y-3">
+                        <h3 className="font-semibold text-lg">Resources</h3>
+
+                        {currentLesson?.resources?.length ? (
+                          <div className="space-y-2">
+
+                            {/* NOTES */}
+                            {currentLesson.resources
+                              .filter((r) => r.type === "NOTE")
+                              .map((res, i) => (
+                                <a
+                                  key={i}
+                                  href={res.fileUrl}
+                                  target="_blank"
+                                  className="flex items-center justify-between border rounded-lg px-4 py-2 hover:bg-muted"
+                                >
+                                  <span className="text-sm"> [{res.type}] {res.title}</span>
+                                  <span className="text-xs text-blue-500">Download</span>
+                                </a>
+                              ))}
+
+                            {/* ASSIGNMENTS */}
+                            {currentLesson.resources
+                              .filter((r) => r.type === "ASSIGNMENT")
+                              .map((res, i) => (
+                                <a
+                                  key={i}
+                                  href={res.fileUrl}
+                                  target="_blank"
+                                  download
+                                  className="flex items-center justify-between border rounded-lg px-4 py-2 hover:bg-muted"
+                                >
+                                  <span className="text-sm">
+                                    [{res.type}] {res.title}
+                                  </span>
+                                  <span className="text-xs text-green-500">Download</span>
+                                </a>
+                              ))}
+
+                          </div>
+                        ) : (
+                          <div className="text-sm text-muted-foreground border rounded-lg p-4">
+                            Resources will be uploaded soon 📦
+                          </div>
+                        )}
+                      </div>
 
                     </CardContent>
 

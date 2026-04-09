@@ -369,6 +369,7 @@ export default function CourseDetailsClient({ course, isEnrolled = false, isWish
                 title={activeLesson?.title}
                 className="w-full h-full"
                 allowFullScreen
+                referrerPolicy="strict-origin-when-cross-origin"
               />
             </div>
           ) : (

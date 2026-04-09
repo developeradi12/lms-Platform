@@ -58,7 +58,7 @@ const navConfig: Record<Role, {
   STUDENT: [
     { title: "Dashboard", href: "/dashboard", icon: BarChart3 },
     { title: "My Learning", href: "/dashboard/my-learning", icon: BookOpen },
-    { title: "Assignment", href: "/assignment", icon: Book },
+    { title: "Assignment", href: "/dashboard/assignment", icon: Book },
 
   ],
   SUPER_ADMIN: [

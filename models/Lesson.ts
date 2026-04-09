@@ -27,7 +27,17 @@ const LessonSchema = new Schema(
       ref: "Chapter",
       required: true,
     },
-  isComplete: { type: Boolean, default: false },
+    resources: [
+      {
+        title: { type: String },
+        fileUrl: { type: String },
+        type: {
+          type: String,
+          enum: ["NOTE", "ASSIGNMENT"],
+        },
+      },
+    ],
+    isComplete: { type: Boolean, default: false },
     videoUrl: { type: String, default: "" },
     duration: { type: Number, default: 0 },
     isFreePreview: { type: Boolean, default: false },

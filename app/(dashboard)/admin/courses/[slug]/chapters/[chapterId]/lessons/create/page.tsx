@@ -3,8 +3,6 @@
 import Link from "next/link"
 import { toast } from "sonner"
 import { useParams, useRouter } from "next/navigation"
-import { useState } from "react"
-import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm, Controller } from "react-hook-form"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -22,17 +20,10 @@ import { Label } from "@/components/ui/label"
 import { getYoutubeId } from "@/lib/getYoutube"
 import api from "@/lib/api"
 import { Textarea } from "@/components/ui/textarea"
+import { formSchema, LessonFormValues } from "@/schemas/lessonSchema"
+import { uploadFile } from "@/utils/uploadFile"
 
-const formSchema = z.object({
-  title: z.string().min(2, "Title must be at least 2 characters"),
-  description : z.string().min(10,"description must be 10 characters"),
-  videoUrl: z.string().url("Enter a valid video URL"),
-  duration: z.coerce.number().min(0, "Duration must be at least 0").optional(),
-  order: z.coerce.number().min(0).optional(),
-  isFreePreview: z.boolean().optional(),
-})
-
-type FormValues = z.input<typeof formSchema>
+type ResourceType = "NOTE" | "ASSIGNMENT";
 
 export default function CreateLessonPage() {
   const router = useRouter()
@@ -40,11 +31,11 @@ export default function CreateLessonPage() {
   const slug = params.slug as string
   const chapterId = params.chapterId as string
 
-  const form = useForm<FormValues>({
+  const form = useForm<LessonFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: "",
-      description:"",
+      description: "",
       videoUrl: "",
       duration: 0,
       isFreePreview: false,
@@ -55,18 +46,26 @@ export default function CreateLessonPage() {
   const videoUrl = form.watch("videoUrl")
   const youtubeId = getYoutubeId(videoUrl)
 
-  const onSubmit = async (values: FormValues) => {
+  const onSubmit = async (values: LessonFormValues) => {
     try {
-      const payload = {
-        title: values.title,
-        videoUrl: values.videoUrl,
-        duration: values.duration || 0,
-        isFreePreview: values.isFreePreview || false,
-      }
+      const formData = new FormData();
+
+      // normal fields
+      formData.append("title", values.title);
+      formData.append("description", values.description || "");
+      formData.append("videoUrl", values.videoUrl || "");
+      formData.append("duration", String(values.duration));
+      formData.append("isFreePreview", String(values.isFreePreview));
+
+      // files
+      values.resources?.forEach((item) => {
+        formData.append("files", item.file);
+        formData.append("types", item.type);
+      });
 
       const res = await api.post(
         `/api/admin/courses/${slug}/chapters/${chapterId}/lessons`,
-        payload
+        formData
       )
 
       toast.success(res.data?.message || "Lesson created")
@@ -170,6 +169,92 @@ export default function CreateLessonPage() {
                   Invalid YouTube URL.
                 </div>
               )}
+            </div>
+
+            {/* Resources Upload */}
+            <div className="space-y-3">
+              <Label>Resources (Notes / Assignment)</Label>
+
+              <Input
+                type="file"
+                multiple
+                className="rounded-xl"
+                onChange={(e) => {
+                  const files = Array.from(e.target.files || []);
+                  const existing = form.getValues("resources") || [];
+                  const newFiles: { file: File; type: ResourceType }[] = files.map((file) => ({
+                    file,
+                    type: "NOTE",
+                  }));
+                  form.setValue("resources", [...existing, ...newFiles]);
+                  e.target.value = "";
+                }}
+              />
+
+              {/* File List */}
+              {form.watch("resources")?.map((res, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between gap-4 border p-3 rounded-xl"
+                >
+                  {/* File Info */}
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium">{res.file?.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {(res.file?.size / 1024).toFixed(1)} KB
+                    </span>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2">
+                    {/* NOTE */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const updated = [...(form.getValues("resources") || [])];
+                        updated[index].type = "NOTE";
+                        form.setValue("resources", updated);
+                      }}
+                      className={`px-2 py-1 text-xs rounded ${res.type === "NOTE"
+                        ? "bg-blue-500 text-white"
+                        : "bg-gray-200"
+                        }`}
+                    >
+                      Note
+                    </button>
+
+                    {/* ASSIGNMENT */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const updated = [...(form.getValues("resources") || [])];
+                        updated[index].type = "ASSIGNMENT";
+                        form.setValue("resources", updated);
+                      }}
+                      className={`px-2 py-1 text-xs rounded ${res.type === "ASSIGNMENT"
+                        ? "bg-green-500 text-white"
+                        : "bg-gray-200"
+                        }`}
+                    >
+                      Assignment
+                    </button>
+
+                    {/* ❌ REMOVE BUTTON */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const updated = (form.getValues("resources") || []).filter(
+                          (_, i) => i !== index
+                        );
+                        form.setValue("resources", updated);
+                      }}
+                      className="px-2 py-1 text-xs rounded bg-red-500 text-white"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
 
             {/* Duration */}

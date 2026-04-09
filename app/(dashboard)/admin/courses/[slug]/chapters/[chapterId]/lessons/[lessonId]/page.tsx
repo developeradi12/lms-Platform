@@ -23,17 +23,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { getYoutubeId } from "@/lib/getYoutube"
 import { Checkbox } from "@/components/ui/checkbox"
 import api from "@/lib/api"
+import { formSchema, LessonFormValues } from "@/schemas/lessonSchema"
 
-const formSchema = z.object({
-    title: z.string().min(2, "Title must be at least 2 characters"),
-    description: z.string(),
-    duration: z.number(),
-    videoUrl: z.string().url("Must be a valid URL"),
-    isFreePreview: z.boolean(),
-})
-
-type FormValues = z.input<typeof formSchema>
-
+type ResourceType = "NOTE" | "ASSIGNMENT";
 export default function EditLessonPage() {
     const router = useRouter()
     const params = useParams()
@@ -42,12 +34,9 @@ export default function EditLessonPage() {
     const chapterId = params.chapterId as string
     const lessonId = params.lessonId as string
 
-    // console.log("slug", slug)
-    // console.log("chapterId", chapterId)
-
     const [isLoading, setIsLoading] = useState(true)
 
-    const form = useForm<FormValues>({
+    const form = useForm<LessonFormValues>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             title: "",
@@ -55,6 +44,7 @@ export default function EditLessonPage() {
             duration: 0,
             videoUrl: "",
             isFreePreview: false,
+            resources: []
 
         },
     })
@@ -63,7 +53,7 @@ export default function EditLessonPage() {
     const videoUrl = form.watch("videoUrl")
     const youtubeId = getYoutubeId(videoUrl)
 
-    // ✅ Load chapter
+    //  Load chapter
     useEffect(() => {
         if (!lessonId) return
 
@@ -83,7 +73,8 @@ export default function EditLessonPage() {
                     description: lesson.description || "",
                     videoUrl: lesson.videoUrl || "",
                     duration: lesson.duration || 0,
-                    isFreePreview: lesson.isFreePreview || false
+                    isFreePreview: lesson.isFreePreview || false,
+                    resources: lesson.resources || [],
                 })
             } catch (error: any) {
                 toast.error(error?.response?.data?.message || "Failed to load chapter")
@@ -95,16 +86,28 @@ export default function EditLessonPage() {
         fetchLesson()
     }, [lessonId, slug, router, chapterId])
 
-    const onSubmit = async (values: FormValues) => {
+    const onSubmit = async (values: LessonFormValues) => {
         try {
-            const payload = {
-                title: values.title,
-                description: values.description,
-                videoUrl: values.videoUrl,
-                duration: values.duration || 0,
-                isFreePreview: values.isFreePreview || false,
-            }
-            const res = await api.patch(`/api/admin/courses/${slug}/chapters/${chapterId}/lessons/${lessonId}`, payload)
+            const formData = new FormData()
+
+            formData.append("title", values.title)
+            formData.append("description", values.description || "")
+            formData.append("videoUrl", values.videoUrl || "")
+            formData.append("duration", String(values.duration))
+            formData.append("isFreePreview", String(values.isFreePreview))
+
+            values.resources?.forEach((res: any) => {
+                if (res.file) {
+                    // new file
+                    formData.append("files", res.file)
+                    formData.append("types", res.type)
+                } else {
+                    // existing
+                    formData.append("existing", JSON.stringify(res))
+                }
+            })
+
+            const res = await api.patch(`/api/admin/courses/${slug}/chapters/${chapterId}/lessons/${lessonId}`, formData)
 
             toast.success(res.data?.message || "Lesson updated")
 
@@ -131,7 +134,7 @@ export default function EditLessonPage() {
                 </Button>
             </div>
 
-            <Card className="rounded-2xl max-w-2xl">
+            <Card className="rounded-2xl max-w-5xl">
                 <CardHeader>
                     <CardTitle>Lesson Details</CardTitle>
                     <CardDescription>Edit lesson information.</CardDescription>
@@ -213,20 +216,123 @@ export default function EditLessonPage() {
                                     </div>
                                 )}
                             </div>
+
+                            {/*resources */}
+                            <div className="space-y-3">
+                                <Input
+                                    type="file"
+                                    multiple
+                                    className="rounded-xl"
+                                    onChange={(e) => {
+                                        const files = Array.from(e.target.files || []);
+                                        const existing = form.getValues("resources") || [];
+                                        const existingNames = existing.map((r: any) =>
+                                            r.file ? r.file.name : r.title
+                                        );
+
+                                        const filtered = files.filter(
+                                            (file) => !existingNames.includes(file.name)
+                                        );
+                                        const newFiles = filtered.map((file) => ({
+                                            file,
+                                            type: "NOTE" as const,
+                                        }));
+                                        form.setValue("resources", [...existing, ...newFiles]);
+                                        e.target.value = "";
+                                    }}
+                                />
+                                {form.watch("resources")?.map((res: any, index) => {
+                                    const isNew = !!res.file; // 🔥 check
+
+                                    return (
+                                        <div
+                                            key={index}
+                                            className="flex items-center justify-between gap-4 border p-3 rounded-xl"
+                                        >
+                                            {/* File Name */}
+                                            <div>
+                                                <span className="text-sm font-medium">
+                                                    {isNew ? res.file.name : res.title}
+                                                </span>
+                                            </div>
+
+                                            {/* Actions */}
+                                            <div className="flex gap-2">
+                                                {/* TYPE */}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const updated = [...form.getValues("resources") || []];
+                                                        updated[index].type = "NOTE" as ResourceType;
+                                                        form.setValue("resources", updated);
+                                                    }}
+                                                    className={`px-2 py-1 text-xs rounded ${res.type === "NOTE" ? "bg-blue-500 text-white" : "bg-gray-200"
+                                                        }`}
+                                                >
+                                                    Note
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const updated = [...form.getValues("resources") || []];
+                                                        updated[index].type = "ASSIGNMENT";
+                                                        form.setValue("resources", updated);
+                                                    }}
+                                                    className={`px-2 py-1 text-xs rounded ${res.type === "ASSIGNMENT"
+                                                        ? "bg-green-500 text-white"
+                                                        : "bg-gray-200"
+                                                        }`}
+                                                >
+                                                    Assignment
+                                                </button>
+
+                                                {/* DOWNLOAD (for existing) */}
+                                                {!isNew && (
+                                                    <a
+                                                        href={res.fileUrl}
+                                                        target="_blank"
+                                                        className="text-xs underline"
+                                                    >
+                                                        View
+                                                    </a>
+                                                )}
+
+                                                {/* REMOVE */}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const updated = (form.getValues("resources") || [])
+                                                            .filter((_: any, i: number) => i !== index);
+
+                                                        form.setValue("resources", updated);
+                                                    }}
+                                                    className="px-2 py-1 text-xs rounded bg-red-500 text-white"
+                                                >
+                                                    Remove
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
                             {/* Duration */}
-                            <div className="space-y-2">
+                            < div className="space-y-2" >
                                 <Label>Duration (minutes)</Label>
                                 <Input
                                     type="number"
                                     className="rounded-xl"
                                     {...form.register("duration", { valueAsNumber: true })}
                                 />
-                                {form.formState.errors.duration && (
-                                    <p className="text-sm text-red-500">
-                                        {form.formState.errors.duration.message}
-                                    </p>
-                                )}
-                                <p className="text-xs text-muted-foreground">
+                                {
+                                    form.formState.errors.duration && (
+                                        <p className="text-sm text-red-500">
+                                            {form.formState.errors.duration.message}
+                                        </p>
+                                    )
+                                }
+                                < p className="text-xs text-muted-foreground" >
                                     Please fill video duration
                                 </p>
                             </div>
@@ -265,6 +371,6 @@ export default function EditLessonPage() {
                     )}
                 </CardContent>
             </Card>
-        </div>
+        </div >
     )
 }

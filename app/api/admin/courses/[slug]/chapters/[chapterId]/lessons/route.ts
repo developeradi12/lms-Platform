@@ -5,6 +5,9 @@ import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { Course } from "@/models/Course"
 import mongoose from "mongoose"
+import path from "path"
+import { promises as fs } from "fs"
+import { uploadFile } from "@/utils/uploadFile"
 
 type Params = {
   params: Promise<{ chapterId: string }>
@@ -61,10 +64,40 @@ export async function POST(req: Request, { params }: Params) {
       )
     }
 
-    // Parse JSON body
-    const body = await req.json()
-    const { title, description, videoUrl, duration, isFreePreview } = body
+    // Parse form data
+    const formData = await req.formData()
 
+    const title = formData.get("title") as string
+    const description = formData.get("description") as string
+    const videoUrl = formData.get("videoUrl") as string
+    const duration = Number(formData.get("duration"))
+    const isFreePreview = formData.get("isFreePreview") === "true"
+
+    // files
+    const files = formData.getAll("files") as File[]
+    const types = formData.getAll("types") as string[]
+    
+    const resources = []
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]
+      const type = types[i]
+
+      try {
+        const fileUrl = await uploadFile(file, "lessons")
+
+        resources.push({
+          title: file.name,
+          fileUrl,
+          type,
+        })
+      } catch (err: any) {
+        return NextResponse.json(
+          { success: false, message: err.message },
+          { status: 400 }
+        )
+      }
+    }
     if (!title?.trim()) {
       return NextResponse.json(
         { success: false, message: "Title is required" },
@@ -89,6 +122,7 @@ export async function POST(req: Request, { params }: Params) {
           duration: Number(duration) || 0,
           order: finalOrder,
           isPreview: Boolean(isFreePreview),
+          resources,
         },
       ],
     )

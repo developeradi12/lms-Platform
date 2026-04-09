@@ -1,5 +1,7 @@
 import connectDb from "@/lib/db"
 import Lesson from "@/models/Lesson"
+import { deleteFile } from "@/utils/deleteFile"
+import { uploadFile } from "@/utils/uploadFile"
 import mongoose from "mongoose"
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
@@ -52,9 +54,68 @@ export async function PATCH(req: Request, { params }: Params) {
 
     const { lessonId } = await params
 
-    const body = await req.json()
-    const { title, description, videoUrl, duration, order, isFreePreview } = body
+    const formData = await req.formData()
 
+    const title = formData.get("title") as string
+    const description = formData.get("description") as string
+    const videoUrl = formData.get("videoUrl") as string
+    const duration = Number(formData.get("duration"))
+    const isFreePreview = formData.get("isFreePreview") === "true"
+
+    const files = formData.getAll("files") as File[]
+    const types = formData.getAll("types") as string[]
+    const existingRaw = formData.getAll("existing") as string[]
+
+
+    const oldLesson = await Lesson.findOne({ slug: lessonId })
+
+    if (!oldLesson) {
+      return NextResponse.json({ message: "Lesson not found" }, { status: 404 })
+    }
+
+    let existingResources: any[] = []
+
+    for (const item of existingRaw) {
+      try {
+        const oldFilesSet = new Set(
+          oldLesson.resources.map((r: any) => r.fileUrl)
+        )
+
+        existingResources = existingResources.filter((r) =>
+          oldFilesSet.has(r.fileUrl)
+        )
+      } catch { }
+    }
+
+    let newResources: any[] = []
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]
+      const type = types[i] === "ASSIGNMENT" ? "ASSIGNMENT" : "NOTE"
+
+      const fileUrl = await uploadFile(file, "lessons")
+
+      newResources.push({
+        title: file.name,
+        fileUrl,
+        type,
+      })
+    }
+
+    const oldFiles = oldLesson.resources.map((r: any) => r.fileUrl)
+    const keptFiles = existingResources.map((r: any) => r.fileUrl)
+
+    const toDelete = oldFiles.filter((f: string) => !keptFiles.includes(f))
+
+    for (const file of toDelete) {
+      try {
+        await deleteFile(file)
+      } catch (err) {
+        console.log("Delete failed:", file)
+      }
+    }
+
+    const finalResources = [...existingResources, ...newResources];
     const updated = await Lesson.findOneAndUpdate(
       { slug: lessonId },
       {
@@ -62,10 +123,10 @@ export async function PATCH(req: Request, { params }: Params) {
         ...(description !== undefined ? { description: description.trim() } : {}),
         ...(videoUrl !== undefined ? { videoUrl: videoUrl || "" } : {}),
         ...(duration !== undefined ? { duration: Number(duration) || 0 } : {}),
-        ...(order !== undefined ? { order: Number(order) || 0 } : {}),
         ...(isFreePreview !== undefined
           ? { isFreePreview: Boolean(isFreePreview) }
           : {}),
+        resources: finalResources,
       },
       { new: true }
     )
@@ -103,14 +164,17 @@ export async function DELETE(req: Request, { params }: Params) {
 
     const { lessonId } = await params
 
-    const deleted = await Lesson.findOneAndDelete({ slug: lessonId })
+    const lesson = await Lesson.findOne({ slug: lessonId })
 
-    if (!deleted) {
-      return NextResponse.json(
-        { success: false, message: "Lesson not found" },
-        { status: 404 }
-      )
+    if (!lesson) {
+      return NextResponse.json({ message: "Lesson not found" }, { status: 404 })
     }
+    //delete all files
+    for (const res of lesson.resources) {
+      await deleteFile(res.fileUrl)
+    }
+    //delte lesson
+    await Lesson.deleteOne({ slug: lessonId })
 
     return NextResponse.json({
       success: true,

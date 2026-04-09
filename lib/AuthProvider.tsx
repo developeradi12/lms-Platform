@@ -29,8 +29,8 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
           setLoading(false);
           return;
         }
-        
-        
+
+
         const res = await api.get("/api/auth/me");
         setUser(res.data.user);
       } catch {
@@ -50,7 +50,15 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={{ user, loading, logout }}>
-      {children}
+      {!loading ? children : <FullPageLoader />}
     </AuthContext.Provider>
+  );
+}
+
+function FullPageLoader() {
+  return (
+    <div className="h-screen w-full flex items-center justify-center">
+      <div className="h-10 w-10 border-4 border-gray-300 border-t-black rounded-full animate-spin"></div>
+    </div>
   );
 }

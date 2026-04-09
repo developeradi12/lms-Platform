@@ -34,11 +34,15 @@ export async function proxy(req: NextRequest) {
         process.env.ACCESS_TOKEN_SECRET!
       );
 
-      const { payload } = await jwtVerify(accessToken, secret);
+      const { payload } = await jwtVerify(accessToken, secret, {
+        clockTolerance: 15, // small buffer
+      });
 
       userRole = payload.role as string;
     } catch (err) {
-      return NextResponse.redirect(new URL("/login", req.url));
+      // DON'T redirect on expiry
+      // Just treat as unauthenticated for role-based checks
+      userRole = null;
     }
   }
 
@@ -49,8 +53,8 @@ export async function proxy(req: NextRequest) {
 
   //   ADMIN PROTECTION
   if (isAdminRoute && userRole !== "ADMIN") {
-  return NextResponse.redirect(new URL("/dashboard", req.url));
-}
+    return NextResponse.redirect(new URL("/dashboard", req.url));
+  }
 
   return NextResponse.next();
 }
