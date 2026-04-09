@@ -34,7 +34,7 @@ const EnrollmentSchema = new Schema(
   { timestamps: true }
 );
 
-// 🚨 Prevent duplicate purchase
+//  Prevent duplicate purchase
 EnrollmentSchema.index({ user: 1, course: 1 }, { unique: true });
 
 export default mongoose.models.Enrollment ||

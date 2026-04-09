@@ -122,7 +122,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
 
         const slug = await params;
         // console.log(slug);
-        const category = await Category.findOne({ slug })
+        const category = await Category.findOne( slug )
 
         if (!category) {
             return NextResponse.json(

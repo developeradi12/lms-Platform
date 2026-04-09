@@ -14,11 +14,13 @@ type WishlistItem = {
   thumbnail?: string
 }
 
-type OrderItem = {
+type EnrolledCourse = {
   _id: string
-  title: string
-  price: number
-  thumbnail?: string
+  course: {
+    title: string
+    price: number
+    thumbnail?: string
+  }
 }
 
 type UserDetail = {
@@ -30,7 +32,7 @@ type UserDetail = {
   bio?: string
   isVerified?: boolean
   status?: string
-  orders?: OrderItem[]
+  enrolledCourses?: EnrolledCourse[]
   reviews?: any[]
   wishlist?: WishlistItem[]
   createdAt: string
@@ -122,8 +124,8 @@ export default function AdminUserDetailPage() {
     typeof params?.slug === "string"
       ? params.slug
       : Array.isArray(params?.slug)
-      ? params.slug[0]
-      : ""
+        ? params.slug[0]
+        : ""
 
   const [user, setUser] = useState<UserDetail | null>(null)
   const [loading, setLoading] = useState(true)
@@ -144,7 +146,7 @@ export default function AdminUserDetailPage() {
 
         const res = await api.get(`/api/admin/users/${id}`)
         const fetchedUser = res.data?.user
-
+       console.log("fetchedUser",fetchedUser);
         if (!fetchedUser) {
           router.push("/admin/users")
           return
@@ -197,11 +199,10 @@ export default function AdminUserDetailPage() {
             <span className="px-3 py-1 text-xs rounded-full bg-primary/10 text-primary font-medium">
               {user.role}
             </span>
-            <span className={`px-3 py-1 text-xs rounded-full font-medium ${
-              user.status === "ACTIVE"
-                ? "bg-green-100 text-green-700"
-                : "bg-red-100 text-red-700"
-            }`}>
+            <span className={`px-3 py-1 text-xs rounded-full font-medium ${user.status === "ACTIVE"
+              ? "bg-green-100 text-green-700"
+              : "bg-red-100 text-red-700"
+              }`}>
               {user.status}
             </span>
             {user.isVerified && (
@@ -216,8 +217,8 @@ export default function AdminUserDetailPage() {
       {/* Stats Section */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-card border rounded-2xl p-5 shadow-sm">
-          <p className="text-sm text-muted-foreground">Orders</p>
-          <p className="text-2xl font-bold">{user.orders?.length || 0}</p>
+          <p className="text-sm text-muted-foreground">Enrolled Courses</p>
+          <p className="text-2xl font-bold">{user.enrolledCourses?.length || 0}</p>
         </div>
         <div className="bg-card border rounded-2xl p-5 shadow-sm">
           <p className="text-sm text-muted-foreground">Reviews</p>
@@ -229,14 +230,17 @@ export default function AdminUserDetailPage() {
         </div>
       </div>
 
-      {/* Orders Accordion */}
-      <AccordionSection title="Orders" count={user.orders?.length || 0}>
-        {user.orders?.map((order) => (
+   
+      <AccordionSection
+        title="Enrolled Courses"
+        count={user.enrolledCourses?.length || 0}
+      >
+        {user.enrolledCourses?.map((enroll) => (
           <ItemCard
-            key={order._id}
-            title={order.title}
-            price={order.price}
-            thumbnail={order.thumbnail}
+            key={enroll._id}
+            title={enroll.course.title}
+            price={enroll.course.price}
+            thumbnail={enroll.course.thumbnail}
           />
         ))}
       </AccordionSection>
@@ -284,6 +288,6 @@ export default function AdminUserDetailPage() {
         </div>
       </div>
 
-    </div>
+    </div >
   )
 }

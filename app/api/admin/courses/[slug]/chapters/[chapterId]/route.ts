@@ -59,40 +59,57 @@ export async function PATCH(req: Request, { params }: Params) {
 
 //  DELETE: Delete chapter + delete all lessons inside it
 export async function DELETE(req: Request, { params }: Params) {
-    try {
-        await connectDb()
-        const cookieStore = await cookies()
-        const accessToken = cookieStore.get("accessToken")?.value
+  const session = await mongoose.startSession();
 
-        if (!accessToken) {
-            return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
-        }
+  try {
+    await connectDb();
+    session.startTransaction();
 
-        const { chapterId } = await params
+    const cookieStore = await cookies();
+    const accessToken = cookieStore.get("accessToken")?.value;
 
-        const chapter = await Chapter.findOne({ slug: chapterId });
-        if (!chapter) {
-            return NextResponse.json(
-                { success: false, message: "Chapter not found" },
-                { status: 404 }
-            );
-        }
-        // 1) delete all lessons of this chapter
-        await Lesson.deleteMany({ chapter: chapter._id })
-
-        // 2) delete chapter itself
-        await Chapter.findByIdAndDelete(chapter._id);
-
-        return NextResponse.json({
-            success: true,
-            message: "Chapter deleted (lessons also deleted)",
-        })
-    } catch (error: any) {
-        return NextResponse.json(
-            { success: false, message: error.message || "Delete failed" },
-            { status: 500 }
-        )
+    if (!accessToken) {
+      await session.abortTransaction();
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
+
+    const { chapterId } = await params;
+
+    // 1️ Find chapter
+    const chapter = await Chapter.findOne({ slug: chapterId }).session(session);
+
+    if (!chapter) {
+      await session.abortTransaction();
+      return NextResponse.json(
+        { success: false, message: "Chapter not found" },
+        { status: 404 }
+      );
+    }
+
+    // 2️ Delete all lessons of this chapter
+    await Lesson.deleteMany({ chapter: chapter._id }).session(session);
+
+    // 3️ Delete chapter
+    await Chapter.deleteOne({ _id: chapter._id }).session(session);
+
+    //  Commit
+    await session.commitTransaction();
+    session.endSession();
+
+    return NextResponse.json({
+      success: true,
+      message: "Chapter + all lessons deleted",
+    });
+
+  } catch (error: any) {
+    await session.abortTransaction();
+    session.endSession();
+
+    return NextResponse.json(
+      { success: false, message: error.message || "Delete failed" },
+      { status: 500 }
+    );
+  }
 }
 
 //  GET: Single Chapter

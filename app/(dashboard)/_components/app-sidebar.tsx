@@ -15,6 +15,7 @@ import {
   MessageSquareQuote,
   Image,
   ListOrdered,
+  Book,
 } from "lucide-react"
 
 import {
@@ -50,13 +51,15 @@ const navConfig: Record<Role, {
     { title: "Manage Courses", href: "/admin/courses", icon: Library },
     { title: "Categories", href: "/admin/categories", icon: BookOpen },
     { title: "Users", href: "/admin/users", icon: Users },
-    {title:"Orders",href:"/admin/orders",icon:ListOrdered},
-    { title: "Banner", href: "/admin/banner", icon: Image },
-    { title: "Testimonials", href: "/admin/testimonials", icon: MessageSquareQuote }
+    { title: "Orders", href: "/admin/orders", icon: ListOrdered },
+    { title: "Assignment", href: "/admin/assignment", icon: Book },
+    // { title: "Testimonials", href: "/admin/testimonials", icon: MessageSquareQuote }
   ],
   STUDENT: [
     { title: "Dashboard", href: "/dashboard", icon: BarChart3 },
     { title: "My Learning", href: "/dashboard/my-learning", icon: BookOpen },
+    { title: "Assignment", href: "/assignment", icon: Book },
+
   ],
   SUPER_ADMIN: [
     { title: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },

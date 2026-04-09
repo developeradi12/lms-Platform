@@ -1,19 +1,15 @@
 import { Course } from "@/models/Course"
-import api from "../api"
 import Category from "@/models/Category"
-import { CourseSerialized } from "@/types/course"
-import { CourseCreateInput } from "@/schemas/courseSchema"
-
 type CourseSlug = {
-  slug:string
+    slug: string
 }
 
 interface GetCoursesProps {
-  search: string
-  categories: string
-  price: string
-  skip: number
-  limit: number
+    search: string
+    categories: string
+    price: string
+    skip: number
+    limit: number
 }
 
 export async function getCourses({
@@ -39,13 +35,13 @@ export async function getCourses({
         Course.countDocuments(query),
         Course.find(query)
             .populate("categories", "_id name slug") // Only required fields
-            .populate("instructor", "_id name profileImage") // Only required fields
+            .populate("instructor", "_id name -password -refreshToken")
             .skip(skip)
             .limit(limit)
             .sort({ createdAt: -1 })
             .lean(),
     ])
-
+    // console.log("Queried Courses:", courses)
     return { total, courses }
 }
 

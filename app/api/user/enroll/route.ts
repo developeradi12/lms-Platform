@@ -7,75 +7,119 @@ import { getSession } from "@/utils/session"
 import User from "@/models/User"
 import "@/models/Chapter"
 import "@/models/Lesson"
+import mongoose from "mongoose"
+import Order from "@/models/Order"
+
 export async function POST(req: Request) {
-    try {
-        await connectDb()
-        const session = await getSession();
-        const { slug } = await req.json()
+  const sessionDB = await mongoose.startSession()
 
-        if (!slug) {
-            return NextResponse.json(
-                { success: false, message: "Course slug required" },
-                { status: 400 }
-            )
-        }
+  try {
+    await connectDb()
+    sessionDB.startTransaction()
 
-        // 🔍 Find course
-        const course = await Course.findOne({ slug })
-        if (!course) {
-            return NextResponse.json(
-                { success: false, message: "Course not found" },
-                { status: 404 }
-            )
-        }
-        // 💰 Free course check
-        if (course.price > 0) {
-            return NextResponse.json(
-                { success: false, message: "Payment required" },
-                { status: 403 }
-            )
-        }
+    const session = await getSession()
+    const { slug } = await req.json()
 
-        // 🚫 Check if already enrolled
-        const existing = await Enrollment.findOne({
-            user: session?.userId,
-            course: course._id,
-        })
-
-        if (existing) {
-            return NextResponse.json({
-                success: true,
-                message: "Already enrolled",
-            })
-        }
-        const progress = await Progress.create({
-            user: session?.userId,
-            course: course._id,
-            completedLessons: []
-        })
-
-        const enrollment = await Enrollment.create({
-            user: session?.userId,
-            course: course._id,
-            progress: progress._id,
-        })
-
-        // update user
-        await User.findByIdAndUpdate(session?.userId, {
-            $push: { enrolledCourses: enrollment._id }
-        })
-
-        return NextResponse.json(
-            { success: true, message: "Enrollment successful" },
-            { status: 201 }
-        )
-    } catch (error) {
-        console.error("ENROLL ERROR:", error)
-        return NextResponse.json(
-            { success: false, message: "Internal Server Error" },
-            { status: 500 }
-        )
+    if (!slug) {
+      return NextResponse.json(
+        { success: false, message: "Course slug required" },
+        { status: 400 }
+      )
     }
+
+    // Find course
+    const course = await Course.findOne({ slug }).session(sessionDB)
+    if (!course) {
+      return NextResponse.json(
+        { success: false, message: "Course not found" },
+        { status: 404 }
+      )
+    }
+
+    if (course.price > 0) {
+      return NextResponse.json(
+        { success: false, message: "Payment required" },
+        { status: 403 }
+      )
+    }
+
+    //  Check existing enrollment
+    const existing = await Enrollment.findOne({
+      user: session?.userId,
+      course: course._id,
+    }).session(sessionDB)
+
+    if (existing) {
+      await sessionDB.commitTransaction()
+      return NextResponse.json({
+        success: true,
+        message: "Already enrolled",
+      })
+    }
+
+    //  Create enrollment
+    const enrollment = await Enrollment.create(
+      [
+        {
+          user: session?.userId,
+          course: course._id,
+        },
+      ],
+      { session: sessionDB }
+    )
+
+    //  Create order
+    const order = await Order.create(
+      [
+        {
+          user: session?.userId,
+          course: course._id,
+          amount: course.price,
+          currency: "INR",
+          status: "SUCCESS",
+          paymentId: `FREE-${enrollment[0]._id}`,
+          orderId: `ORDER-${enrollment[0]._id}`,
+        },
+      ],
+      { session: sessionDB }
+    )
+
+    //  Update user (single query)
+    await User.findByIdAndUpdate(
+      session?.userId,
+      {
+        $push: {
+          enrolledCourses: enrollment[0]._id,
+          orders: order[0]._id,
+        },
+      },
+      { session: sessionDB }
+    )
+
+    //  Update course count
+    await Course.findByIdAndUpdate(
+      course._id,
+      { $inc: { totalEnrollments: 1 } },
+      { session: sessionDB }
+    )
+
+    await sessionDB.commitTransaction()
+
+    return NextResponse.json(
+      { success: true, message: "Enrollment successful" },
+      { status: 201 }
+    )
+  } catch (error) {
+    await sessionDB.abortTransaction()
+    console.error("ENROLL ERROR:", error)
+
+    return NextResponse.json(
+      { success: false, message: "Internal Server Error" },
+      { status: 500 }
+    )
+  } finally {
+    sessionDB.endSession()
+  }
 }
 
 export async function GET() {

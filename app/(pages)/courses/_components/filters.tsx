@@ -2,7 +2,7 @@
 
 
 import { CategorySerialized } from "@/types/category"
-import { useRouter, useSearchParams } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
 type Props = {
   categories: CategorySerialized[]
@@ -11,6 +11,8 @@ type Props = {
 export default function Filters({ categories }: Props) {
   const router = useRouter()
   const searchParams = useSearchParams()
+
+  const pathname = usePathname()
 
   const updateFilter = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -22,7 +24,7 @@ export default function Filters({ categories }: Props) {
     }
 
     params.set("page", "1")
-    router.push(`/courses?${params.toString()}`)
+    router.push(`${pathname}?${params.toString()}`)
   }
 
   return (

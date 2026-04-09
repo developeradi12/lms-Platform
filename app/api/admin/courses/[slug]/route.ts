@@ -8,6 +8,9 @@ import path from "path"
 import fs from "fs/promises";
 import { cookies } from "next/headers"
 import { getSession } from "@/utils/session"
+import mongoose from "mongoose"
+import Chapter from "@/models/Chapter"
+import Lesson from "@/models/Lesson"
 
 export async function GET(
   req: Request,
@@ -171,31 +174,55 @@ export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ slug: string }> }
 ) {
+  const session = await mongoose.startSession();
   try {
-    await connectDb()
-    const cookieStore = await cookies()
-    const accessToken = cookieStore.get("accessToken")?.value
+    await connectDb();
+    session.startTransaction();
+
+    const cookieStore = await cookies();
+    const accessToken = cookieStore.get("accessToken")?.value;
 
     if (!accessToken) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
-    const slug = await params;
-    // console.log("delete id", slug);
-    const deleted = await Course.findOneAndDelete({ slug })
+    const { slug } = await params;
 
-    if (!deleted) {
+    // 1️ Find course
+    const course = await Course.findOne({ slug }).session(session);
+
+    if (!course) {
+      await session.abortTransaction();
       return NextResponse.json(
         { success: false, message: "Course not found" },
         { status: 404 }
-      )
+      );
     }
+    //  Delete all chapters of this course
+    const chapters = await Chapter.find({ course: course._id }).session(session);
+
+    const chapterIds = chapters.map((ch) => ch._id);
+
+    // 3️ Delete all lessons inside those chapters
+    await Lesson.deleteMany({ chapter: { $in: chapterIds } }).session(session);
+
+    // 4️ Delete chapters
+    await Chapter.deleteMany({ course: course._id }).session(session);
+
+    // 5️ Delete course
+    await Course.deleteOne({ _id: course._id }).session(session);
+
+    //  Commit transaction
+    await session.commitTransaction();
+    session.endSession();
 
     return NextResponse.json(
-      { success: true, message: "Course deleted" },
+      { success: true, message: "Course + Chapters + Lessons deleted" },
       { status: 200 }
-    )
+    );
   } catch (error: any) {
+    await session.abortTransaction();
+    session.endSession();
     return NextResponse.json(
       { success: false, message: error.message },
       { status: 500 }

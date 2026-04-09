@@ -31,7 +31,7 @@ const OtpSchema = new Schema(
     },
     { timestamps: true }
 )
-OtpSchema.index({ email: 1, purpose: 1 })
+OtpSchema.index({ email: 1, purpose: 1 }, { unique: true })
 OtpSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 })
 
 export default models.Otp || mongoose.model("Otp", OtpSchema)

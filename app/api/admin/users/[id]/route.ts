@@ -56,33 +56,36 @@ export async function GET(
     if (!accessToken) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
-    const { id } = await params;  // ✅ no await
-    // console.log("from server", id)
+    const { id } = await params;  // 
+
     const user = await User.findById(id).select("-password")
       .populate({
         path: "wishlist",
         select: "title price thumbnail"
       })
-    // .populate({
-    //   path: "orders",
-    //   select: "title price thumbnail"
-    // })
+      .populate({
+        path: "enrolledCourses",
+        populate: {
+          path: "course",
+          select: "title price thumbnail slug"
+        }
+      })
 
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: "User not found" },
-        { status: 404 }
-      )
-    }
-
+  if (!user) {
     return NextResponse.json(
-      { success: true, user },
-      { status: 200 }
-    )
-  } catch (error) {
-    return NextResponse.json(
-      { success: false, message: "Failed to fetch user" },
-      { status: 500 }
+      { success: false, message: "User not found" },
+      { status: 404 }
     )
   }
+
+  return NextResponse.json(
+    { success: true, user },
+    { status: 200 }
+  )
+} catch (error) {
+  return NextResponse.json(
+    { success: false, message: "Failed to fetch user" },
+    { status: 500 }
+  )
+}
 }

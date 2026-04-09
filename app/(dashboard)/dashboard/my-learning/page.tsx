@@ -125,17 +125,17 @@ export default function MyCoursesPage() {
                     value={completed.length}
                 />
 
-                <Stat
+                {/* <Stat
                     icon={<Clock className="size-5" />}
                     label="Total Hours"
                     value={`${totalHours}h`}
-                />
+                /> */}
 
-                <Stat
+                {/* <Stat
                     icon={<Trophy className="size-5" />}
                     label="Certificates"
                     value={completed.length}
-                />
+                /> */}
 
             </div>
 
@@ -179,7 +179,7 @@ export default function MyCoursesPage() {
                                 No courses here yet
                             </h3>
 
-                            <Link href="/courses">
+                            <Link href="/">
                                 <Button className="mt-4">
                                     Browse Courses
                                 </Button>

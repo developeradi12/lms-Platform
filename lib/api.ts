@@ -1,92 +1,77 @@
-import axios from "axios"
-/**
- *  Create a custom axios instance
- * - baseURL: optional (if you use env for backend)
- * - withCredentials: VERY IMPORTANT for cookies (accessToken / refreshToken)
- */
+import axios from "axios";
+
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000",
   withCredentials: true,
-})
-/**
- * Flag: to avoid multiple refresh calls at same time
- * - When 10 requests fail with 401 together,
- *   we refresh only ONCE
- */
-let isRefreshing = false
+});
 
-/**
- * Queue: store all pending requests while refresh is running
- * - These requests will wait
- * - After refresh success -> retry them
- */
-let queue: { resolve: () => void; reject: (err: any) => void }[] = []
-
-
-/**
- * Helper function
- * - If refresh success -> resolve all waiting requests
- * - If refresh fails -> reject all waiting requests
- */
+//  Global lock + queue
+let isRefreshing = false;
+let failedQueue: any[] = [];
 
 const processQueue = (error: any) => {
-  queue.forEach((p) => {
-    if (error) p.reject(error) // refresh failed -> fail all waiting requests
-    else p.resolve()// refresh success -> allow waiting requests to continue
-  })
-  queue = [] // clear queue after processing
-}
-
-const PROTECTED_PREFIXES = ["/admin", "/dashboard"]
-
-function isProtectedPage() {
-  return PROTECTED_PREFIXES.some((prefix) =>
-    window.location.pathname.startsWith(prefix)
-  )
-}
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve();
+    }
+  });
+  failedQueue = [];
+};
 
 api.interceptors.response.use(
-  (res) => res,  //  if response success, just return it
+  (res) => res,
   async (err) => {
-    const original = err.config    // original request config (GET/POST/PUT that failed)
+    const original = err.config;
 
-    if (
-      err.response?.status === 401 &&
-      !original._retry &&
-      !original.url?.includes("/api/auth/")
-    ) {
-      original._retry = true
+    //  Ignore refresh endpoint itself
+    if (original.url?.includes("/api/auth/refresh")) {
+      return Promise.reject(err);
+    }
 
-      // If already refreshing, add this request to the queue and wait
+    if (err.response?.status === 401 && !original._retry) {
+      original._retry = true;
+
+      //  If already refreshing → queue requests
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
-          queue.push({
-            resolve: () => resolve(api(original)),
-            reject,
-          })
-        })
+          failedQueue.push({ resolve, reject });
+        }).then(() => api(original));
       }
 
-      isRefreshing = true
+      isRefreshing = true;
 
       try {
-        // Call refresh endpoint
-        await axios.post("/api/auth/refresh", {}, { withCredentials: true })
-        processQueue(null)
-        return api(original) // retry original request
+        await api.post("/api/auth/refresh");
+
+        processQueue(null); // resolve all queued
+        isRefreshing = false;
+
+        return api(original); // retry once
       } catch (refreshError) {
-        processQueue(refreshError)
-        //  Refresh failed — session is dead, send to login
-        if (isProtectedPage()) {
-          window.location.href = "/login"
+        processQueue(refreshError);
+        isRefreshing = false;
+
+        //  HARD STOP (prevents loop)
+        if (typeof window !== "undefined") {
+          const path = window.location.pathname;
+
+          const isProtected =
+            path.startsWith("/dashboard") ||
+            path.startsWith("/admin");
+
+          if (isProtected) {
+            window.location.href = "/login";
+          }
         }
-        return Promise.reject(refreshError)
-      } finally {
-        isRefreshing = false
+
+        return Promise.reject(refreshError);
       }
     }
-    return Promise.reject(err)
-  }
-)
 
-export default api
+    return Promise.reject(err);
+  }
+);
+
+export default api;

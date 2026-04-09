@@ -21,9 +21,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { getYoutubeId } from "@/lib/getYoutube"
 import api from "@/lib/api"
+import { Textarea } from "@/components/ui/textarea"
 
 const formSchema = z.object({
   title: z.string().min(2, "Title must be at least 2 characters"),
+  description : z.string().min(10,"description must be 10 characters"),
   videoUrl: z.string().url("Enter a valid video URL"),
   duration: z.coerce.number().min(0, "Duration must be at least 0").optional(),
   order: z.coerce.number().min(0).optional(),
@@ -37,11 +39,12 @@ export default function CreateLessonPage() {
   const params = useParams()
   const slug = params.slug as string
   const chapterId = params.chapterId as string
-  
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: "",
+      description:"",
       videoUrl: "",
       duration: 0,
       isFreePreview: false,
@@ -92,7 +95,7 @@ export default function CreateLessonPage() {
         </Button>
       </div>
 
-      <Card className="rounded-2xl max-w-2xl">
+      <Card className="rounded-2xl max-w-5xl">
         <CardHeader>
           <CardTitle>Lesson Details</CardTitle>
           <CardDescription>Fill details and upload video URL.</CardDescription>
@@ -111,6 +114,21 @@ export default function CreateLessonPage() {
               {form.formState.errors.title && (
                 <p className="text-sm text-red-500">
                   {form.formState.errors.title.message}
+                </p>
+              )}
+            </div>
+
+            {/*description */}
+            <div className="space-y-2">
+              <Label>Lesson Description</Label>
+              <Textarea
+                placeholder="Example: What is React?"
+                className="rounded-xl"
+                {...form.register("description")}
+              />
+              {form.formState.errors.description && (
+                <p className="text-sm text-red-500">
+                  {form.formState.errors.description.message}
                 </p>
               )}
             </div>

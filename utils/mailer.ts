@@ -1,7 +1,9 @@
 import nodemailer from "nodemailer"
 
 export const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtp.hostinger.com",
+  port: 465,
+  secure: true,
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
@@ -10,7 +12,7 @@ export const transporter = nodemailer.createTransport({
 
 export const sendOtpMail = async (to: string, otp: string) => {
   try {
-    await transporter.sendMail({
+    const info = await transporter.sendMail({
       from: `"LMS Platform" <${process.env.SMTP_USER}>`,
       to,
       subject: "Your OTP Code",
@@ -23,8 +25,9 @@ export const sendOtpMail = async (to: string, otp: string) => {
         </div>
       `,
     })
-  } catch (error) {
-    // console.log("SEND OTP MAIL ERROR:", error)
+
+  } catch (error: any) {
+    // console.error(" SEND OTP MAIL ERROR:", error)
     throw new Error("Failed to send OTP email")
   }
 }

@@ -7,6 +7,7 @@ const UserSchema = new Schema(
       type: String,
       required: true,
       trim: true,
+      select: true
     },
 
     email: {
@@ -19,6 +20,7 @@ const UserSchema = new Schema(
         /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
         "Please enter a valid email address",
       ],
+      select : true
     },
 
     password: {

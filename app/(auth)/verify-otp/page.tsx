@@ -60,7 +60,7 @@ export default function VerifyOtpPage() {
       localStorage.removeItem("signupData")
 
       // redirect
-      router.push("/admin/dashboard") // or "/"
+      router.push("/dashboard") // or "/"
     } catch (error: any) {
       toast.error(error?.response?.data?.message || "OTP verification failed")
     } finally {

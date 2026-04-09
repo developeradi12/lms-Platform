@@ -151,7 +151,7 @@ export default function Login() {
                 {/* Links */}
                 <div className="flex items-center justify-between text-sm pt-2">
                   <Link
-                    href="/auth/forgot-password"
+                    href="/forgot"
                     className="text-muted-foreground hover:underline"
                   >
                     Forgot password?

@@ -11,12 +11,21 @@ function ArrowCircle() {
   )
 }
 
-const quickLinks = ["Home", "About Us", "Contact Us", "Blogs"]
+const quickLinks = [
+  { name: "Home", href: "https://abbieeducation.world/" },
+  { name: "About Us", href: "https://abbieeducation.world/about-us/" },
+  { name: "Contact Us", href: "https://abbieeducation.world/contact-us/" },
+  { name: "Blogs", href: "https://abbieeducation.world/blog/" },
+];
 
 const courses = [
-  "IB", "Cambridge", "Career Counselling",
-  "Pathways and vocational courses", "School Consultants", "Subjects",
-]
+  { name: "IB", href: "https://abbieeducation.world/ib/" },
+  { name: "Cambridge", href: "https://abbieeducation.world/cambridge/" },
+  { name: "Career Counselling", href: "https://abbieeducation.world/career-counselling/" },
+  { name: "Pathways and vocational courses", href: "https://abbieeducation.world/pathways-and-vocational-courses/" },
+  { name: "School Consultants", href: "https://abbieeducation.world/school-consultants/" },
+  { name: "Subjects", href: "https://abbieeducation.world/school-consultants/#" },
+];
 
 export function PublicFooter() {
   return (
@@ -35,9 +44,13 @@ export function PublicFooter() {
             <h3 className="text-[16px] font-bold tracking-[0.08em] mb-3.5 pt-4">QUICK LINKS</h3>
             <ul>
               {quickLinks.map((item) => (
-                <li key={item} className="border-b border-white/20 last:border-0">
-                  <Link href="#" className="flex items-center gap-2.5 py-2.5 text-[15px] text-white transition">
-                    <ArrowCircle />{item}
+                <li key={item.name} className="border-b border-white/20 last:border-0">
+                  <Link
+                    href={item.href}
+                    className="flex items-center gap-2.5 py-2.5 text-[15px] text-white transition hover:translate-x-1"
+                  >
+                    <ArrowCircle />
+                    {item.name}
                   </Link>
                 </li>
               ))}
@@ -49,9 +62,13 @@ export function PublicFooter() {
             <h3 className="text-[16px] font-bold tracking-[0.08em] mb-3.5">EXPLORE COURSES</h3>
             <ul>
               {courses.map((item) => (
-                <li key={item} className="border-b border-white/20 last:border-0">
-                  <Link href="#" className="flex items-center gap-2.5 py-2.5 text-[15px] text-white transition">
-                    <ArrowCircle />{item}
+                <li key={item.name} className="border-b border-white/20 last:border-0">
+                  <Link
+                    href={item.href}
+                    className="flex items-center gap-2.5 py-2.5 text-[15px] text-white transition hover:translate-x-1"
+                  >
+                    <ArrowCircle />
+                    {item.name}
                   </Link>
                 </li>
               ))}

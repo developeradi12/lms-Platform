@@ -2,8 +2,7 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
 import api from "./api";
 import { UserSerialize } from "@/types/user";
-
-
+import { usePathname } from "next/navigation";
 
 type AuthContextType = {
   user: UserSerialize | null,
@@ -20,10 +19,18 @@ export function useAuth() {
 export default function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserSerialize | null>(null);
   const [loading, setLoading] = useState(true);
+  const pathname = usePathname();
 
   useEffect(() => {
     async function fetchUser() {
       try {
+        // Don't run on auth pages
+        if (pathname === "/login" || pathname === "/sign_up" || pathname === "/verify-otp") {
+          setLoading(false);
+          return;
+        }
+        
+        
         const res = await api.get("/api/auth/me");
         setUser(res.data.user);
       } catch {
@@ -33,9 +40,9 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false)
       }
     } fetchUser();
-  }, []);
+  }, [pathname]);
 
-  
+
   const logout = async () => {
     await api.post("/api/auth/logout");
     setUser(null);

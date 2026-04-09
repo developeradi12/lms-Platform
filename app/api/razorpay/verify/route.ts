@@ -6,6 +6,7 @@ import connectDb from "@/lib/db"
 
 import { Course } from "@/models/Course"
 import Order from "@/models/Order"
+import User from "@/models/User"
 
 export async function POST(req: Request) {
   try {
@@ -56,10 +57,10 @@ export async function POST(req: Request) {
       await Order.create({
         user: Id,
         course: courseId,
-        amount:amount,
+        amount: amount,
         paymentId: razorpayPaymentId,
         orderId: razorpayOrderId,
-       status: "SUCCESS",
+        status: "SUCCESS",
       })
     }
 
@@ -69,9 +70,22 @@ export async function POST(req: Request) {
       course: courseId,
     })
     if (!already) {
-      await Enrollment.create({
+      const enrollment = await Enrollment.create({
         user: Id,
         course: courseId,
+      })
+
+      await Course.findByIdAndUpdate(
+        //Increment only when NEW enrollment
+        courseId,
+        { $inc: { totalEnrollments: 1 } }
+      )
+
+      // push enrollment into user
+      await User.findByIdAndUpdate(Id, {
+        $push: {
+          enrolledCourses: enrollment._id,
+        },
       })
     }
 

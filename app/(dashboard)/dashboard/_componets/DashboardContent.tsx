@@ -90,7 +90,7 @@ export default function DashboardContent({
           </p>
         </div>
 
-        <Link href="/courses">
+        <Link href="/">
           <Button>Browse Courses</Button>
         </Link>
       </div>

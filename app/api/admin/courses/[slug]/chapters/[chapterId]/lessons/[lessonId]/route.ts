@@ -8,7 +8,7 @@ type Params = {
   params: Promise<{ lessonId: string }>
 }
 
-// ✅ GET: single lesson
+//  GET: single lesson
 export async function GET(req: Request, { params }: Params) {
   try {
     await connectDb()
@@ -39,7 +39,7 @@ export async function GET(req: Request, { params }: Params) {
   }
 }
 
-// ✅ PATCH: update lesson
+//  PATCH: update lesson
 export async function PATCH(req: Request, { params }: Params) {
   try {
     await connectDb()
@@ -90,7 +90,7 @@ export async function PATCH(req: Request, { params }: Params) {
   }
 }
 
-// ✅ DELETE: delete lesson
+//  DELETE: delete lesson
 export async function DELETE(req: Request, { params }: Params) {
   try {
     await connectDb()

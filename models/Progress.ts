@@ -1,5 +1,4 @@
 import mongoose, { Schema, Types } from "mongoose";
-import { boolean } from "zod";
 
 const ProgressSchema = new Schema(
   {

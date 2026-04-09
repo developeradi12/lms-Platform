@@ -20,7 +20,7 @@ export async function POST(req: Request) {
       )
     }
     // If user already exists & verified
-    const existing = await User.findOne({ email,purpose:"SIGNUP" })
+    const existing = await User.findOne({ email })
     if (existing && existing.isVerified) {
       return NextResponse.json(
         { success: false, message: "User already exists" },
@@ -39,7 +39,7 @@ export async function POST(req: Request) {
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000)
 
     // 4) Purana OTP delete (same email)
-    await Otp.deleteMany({ email }) //deleteMany safer hai (agar kabhi duplicate create ho gaye).
+    await Otp.deleteMany({ email,  purpose: "SIGNUP", }) //deleteMany safer hai (agar kabhi duplicate create ho gaye).
 
     // 5) Save OTP
     await Otp.create({
@@ -56,7 +56,7 @@ export async function POST(req: Request) {
       { status: 200 }
     )
   } catch (error: any) {
-    // console.log("SEND OTP ERROR:", error)
+    console.log("SEND OTP ERROR:", error)
     return NextResponse.json(
       { success: false, message: error.message || "Internal Server Error" },
       { status: 500 }

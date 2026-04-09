@@ -115,7 +115,7 @@ export function PublicNav() {
             className="rounded-full px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white"
             asChild
           >
-            <Link href="/contact">Contact Us</Link>
+            <Link href="https://abbieeducation.world/contact-us/">Contact Us</Link>
           </Button>
 
         </div>
@@ -164,7 +164,7 @@ export function PublicNav() {
               className="rounded-full bg-blue-600 text-white"
               asChild
             >
-              <Link href="/contact">Contact Us</Link>
+              <Link href="https://abbieeducation.world/contact-us/">Contact Us</Link>
             </Button>
 
           </div>
