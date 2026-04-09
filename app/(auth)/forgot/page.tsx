@@ -71,12 +71,12 @@ export default function ForgotPassword() {
         try {
             setLoading(true)
 
-            await api.post("/api/auth/forgot/verify-otp", values)
-
+            const res = await api.post("/api/auth/forgot/verify-otp", values)
+            const token = res.data.resetToken
             toast.success("OTP verified")
 
             //  redirect to reset page
-            window.location.href = `/auth/reset?email=${values.email}`
+            window.location.href = `/reset?token=${token}`
 
         } catch {
             toast.error("Invalid OTP")

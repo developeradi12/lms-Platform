@@ -1,6 +1,6 @@
 import connectDb from "@/lib/db"
 import Otp from "@/models/Otp"
-import { signAccessToken } from "@/utils/jwt"
+import { signAccessToken, signResetToken } from "@/utils/jwt"
 import { verifyOtp } from "@/utils/otp"
 import { NextResponse } from "next/server"
 
@@ -51,11 +51,11 @@ export async function POST(req: Request) {
     await Otp.deleteOne({ _id: otpDoc._id })
 
     //  generate RESET TOKEN (NOT access token)
-    // const resetToken = await signAccessToken({ email })
+    const resetToken = await signResetToken({ email })
 
     return NextResponse.json({
       success: true,
-      // resetToken,
+      resetToken,
     })
 
   } catch (error: any) {

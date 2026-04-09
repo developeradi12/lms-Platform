@@ -36,7 +36,7 @@ export default function ResetPassword() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
-  const email = searchParams.get("email")
+  const token = searchParams.get("token")
 
   const form = useForm<FormType>({
     resolver: zodResolver(schema),
@@ -47,7 +47,7 @@ export default function ResetPassword() {
       setLoading(true)
 
       await api.post("/api/auth/forgot/reset", {
-        email,
+        token,
         password: values.password,
       })
 
@@ -55,8 +55,11 @@ export default function ResetPassword() {
 
       router.push("/login")
 
-    } catch {
-      toast.error("Failed to reset password")
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.message || "Failed to reset password"
+
+      toast.error(message)
     } finally {
       setLoading(false)
     }

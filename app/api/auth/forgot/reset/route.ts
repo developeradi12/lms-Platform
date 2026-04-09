@@ -1,20 +1,44 @@
 import connectDb from "@/lib/db"
 import User from "@/models/User"
+import { verifyResetToken } from "@/utils/jwt"
 import { NextResponse } from "next/server"
 
 export async function POST(req: Request) {
   try {
     await connectDb()
 
-    const { email, password } = await req.json()
+    const { token, password } = await req.json()
 
-    if (!email || !password) {
+    if (!token || !password) {
       return NextResponse.json(
-        { message: "Email & password required" },
+        { message: "Token and password required" },
+        { status: 400 }
+      )
+    }
+    //  Password validation
+    if (password.length < 6) {
+      return NextResponse.json(
+        { message: "Password must be at least 6 characters" },
         { status: 400 }
       )
     }
 
+    //  Verify token
+    let email: string
+
+    try {
+      const decoded = await verifyResetToken(token)
+      email = decoded.email
+    } catch (err: any) {
+      console.error("Token verification failed:", err.message)
+
+      return NextResponse.json(
+        { message: err.message },
+        { status: 400 }
+      )
+    }
+
+    //  Find user
     const user = await User.findOne({ email })
 
     if (!user) {

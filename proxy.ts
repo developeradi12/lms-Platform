@@ -12,7 +12,8 @@ export async function proxy(req: NextRequest) {
 
   const isAuthPage =
     pathname.startsWith("/login") ||
-    pathname.startsWith("/sign_up");
+    pathname.startsWith("/sign_up")||
+      pathname.startsWith("/reset");
 
   const isApiAuth = pathname.startsWith("/api/auth");
 
