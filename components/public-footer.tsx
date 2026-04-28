@@ -1,7 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { Phone, Mail, MapPin, ChevronRight, Facebook, Twitter, Youtube } from "lucide-react"
+import { Phone, Mail, MapPin, ChevronRight, Facebook, Twitter, Youtube, Instagram } from "lucide-react"
+import { FaWhatsapp } from "react-icons/fa";
 
 function ArrowCircle() {
   return (
@@ -17,7 +18,12 @@ const quickLinks = [
   { name: "Contact Us", href: "https://abbieeducation.world/contact-us/" },
   { name: "Blogs", href: "https://abbieeducation.world/blog/" },
 ];
-
+const socials = [
+  { icon: Facebook, link: "#" },
+  { icon: Twitter, link: "#" },
+  { icon: Youtube, link: "#" },
+  { icon: Instagram, link: "https://www.instagram.com/abbie_edu?utm_source=qr&igsh=ejVqdXRqNm14ZDE0" },
+];
 const courses = [
   { name: "IB", href: "https://abbieeducation.world/ib/" },
   { name: "Cambridge", href: "https://abbieeducation.world/cambridge/" },
@@ -77,32 +83,68 @@ export function PublicFooter() {
 
           {/* Contact */}
           <div>
-            <h3 className="text-[16px] font-bold tracking-[0.08em] mb-3.5">CONNECT WITH US</h3>
+            <h3 className="text-[16px] font-bold tracking-[0.08em] mb-3.5">
+              CONNECT WITH US
+            </h3>
+
             <div className="divide-y divide-white/20 text-[15px] text-white">
+
+              {/* WhatsApp */}
               <div className="flex gap-2.5 items-start py-2.5">
-                <Phone size={15} className="mt-0.5 shrink-0 text-white" />
-                <span>+91 9913609395,<br />+91 8980800665</span>
+                <FaWhatsapp size={16} className="mt-1 shrink-0 text-white" />
+                <span className="leading-relaxed">+91 9913619395</span>
               </div>
+
+              {/* Phone */}
+              <div className="flex gap-2.5 items-start py-2.5">
+                <Phone size={16} className="mt-1 shrink-0 text-white" />
+                <span className="leading-relaxed">
+                  +91 9913609395 <br />
+                  +91 8980860605
+                </span>
+              </div>
+
+              {/* Email */}
               <div className="flex gap-2.5 items-center py-2.5">
-                <Mail size={15} className="shrink-0 text-white" />
-                <span>info@abbieeducation.world</span>
+                <Mail size={16} className="shrink-0 text-white" />
+                <a
+                  href="mailto:info@abbieeducation.world"
+                  className="hover:underline break-all"
+                >
+                  info@abbieeducation.world
+                </a>
               </div>
+
+              {/* Address */}
               <div className="flex gap-2.5 items-start py-2.5">
-                <MapPin size={15} className="mt-0.5 shrink-0 text-white" />
-                <span>714-715, Shilp Epitome , opposite Nayara Petrol pump , Rajpath – Sindhu Bhavan road , Bodakdev, Ahmedabad – 380054</span>
+                <MapPin size={16} className="mt-1 shrink-0 text-white" />
+                <span className="leading-relaxed">
+                  714-715, Shilp Epitome, Opp. Nayara Petrol Pump,
+                  Rajpath – Sindhu Bhavan Road, Bodakdev,
+                  Ahmedabad – 380054
+                </span>
               </div>
+
             </div>
           </div>
         </div>
-
         {/* Social */}
         <div className="flex justify-center gap-3 mt-9">
-          {[Facebook, Twitter, Youtube].map((Icon, i) => (
-            <button key={i} className="w-10 h-10 rounded-full flex items-center justify-center cursor-pointer transition"
-              style={{ background: "rgba(255,255,255,0.22)" }}>
-              <Icon size={16} />
-            </button>
-          ))}
+          {socials.map((item, i) => {
+            const Icon = item.icon;
+            return (
+              <a
+                key={i}
+                href={item.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 rounded-full flex items-center justify-center cursor-pointer transition"
+                style={{ background: "rgba(255,255,255,0.22)" }}
+              >
+                <Icon size={16} />
+              </a>
+            );
+          })}
         </div>
 
         {/* Bottom */}
